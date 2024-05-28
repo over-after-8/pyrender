@@ -22,7 +22,8 @@ def login():
             return redirect(url_for("index"))
         else:
             flash("Invalid username or password")
-            return render_template("render/auth/login.html", flashed_messages=json.dumps(get_flashed_messages())), 400
+            return render_template("render/auth/login.html", title="Login",
+                                   flashed_messages=json.dumps(get_flashed_messages())), 400
 
 
 @bp.route("/logout")
@@ -30,3 +31,26 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("auth.login"))
+
+
+@bp.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "GET":
+        return render_template("render/auth/register.html", title="Register",
+                               flashed_messages=json.dumps(get_flashed_messages())), 200
+    else:
+        username = request.form["email"]
+        password = request.form["password"]
+        repeat_password = request.form["repeatPassword"]
+
+        if password != repeat_password:
+            flash("passwords are not match")
+            return render_template("render/auth/register.html", title="Register",
+                                   flashed_messages=json.dumps(get_flashed_messages())), 400
+        if password == repeat_password:
+            res = User.add(user_name=username, password=password)
+            if res:
+                flash("there is an error, please register again or contact administrator")
+                return redirect(url_for("auth.register")), 308
+            else:
+                return redirect(url_for("auth.login"))

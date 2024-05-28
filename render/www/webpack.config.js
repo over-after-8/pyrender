@@ -8,7 +8,8 @@ const BUILD_DIR = path.resolve(__dirname, './static/render/dist');
 module.exports = {
     entry: {
         index: [`${JS_DIR}/index.js`],
-        login: [`${JS_DIR}/login.js`]
+        login: [`${JS_DIR}/login.js`],
+        register: [`${JS_DIR}/register.js`]
     },
     output: {
         path: BUILD_DIR,

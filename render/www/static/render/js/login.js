@@ -1,10 +1,9 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
 
-function App({logo, csrf_token, flashed_messages}) {
+function App({logo, csrf_token, flashed_messages, url_register}) {
 
     flashed_messages = flashed_messages.length > 0 && JSON.parse(flashed_messages) || []
-    console.log(flashed_messages)
     return (
         <>
 
@@ -42,6 +41,7 @@ function App({logo, csrf_token, flashed_messages}) {
                     </label>
                 </div>
                 <button className="btn btn-primary w-100 py-2" type="submit">Sign in</button>
+                <p className={"mt-2 mb-3"}><a href={url_register}>Don't have an account? Let's create!</a></p>
                 <p className="mt-5 mb-3 text-body-secondary">© 2024</p>
             </form>
         </>
@@ -53,6 +53,8 @@ const root = createRoot(container)
 const logo = document.querySelector('meta[name="logo"]').content
 const csrf_token = document.querySelector('meta[name="csrf_token"]').content
 const flashed_messages = document.querySelector('meta[name="flashed_messages"]').content
+const url_register = document.querySelector('meta[name="url_register"]').content
+
 root.render(
-    <App logo={logo} csrf_token={csrf_token} flashed_messages={flashed_messages}/>
+    <App logo={logo} csrf_token={csrf_token} flashed_messages={flashed_messages} url_register={url_register}/>
 )
