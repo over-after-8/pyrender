@@ -25,10 +25,9 @@
 <main class="d-flex flex-nowrap">
     <div class="flex-shrink-0 p-3" style="width: 280px; background: white">
         <a href="/" class="d-flex align-items-center pb-3 mb-3 link-body-emphasis text-decoration-none border-bottom">
-            <svg class="bi pe-none me-2" width="30" height="24">
-                <use xlink:href="#bootstrap"></use>
-            </svg>
-            <span class="fs-5 fw-semibold">Collapsible</span>
+            <img class="me-2" src="{{ url_for('auth.static', filename='render/logo.svg') }}" alt=""
+                 width="30" height="24"/>
+            <span class="fs-5 fw-semibold">PyRender</span>
         </a>
         <ul class="list-unstyled ps-0">
             <li class="mb-1">
@@ -97,7 +96,8 @@
                                class="link-body-emphasis d-inline-flex text-decoration-none rounded">Profile</a></li>
                         <li><a href="#"
                                class="link-body-emphasis d-inline-flex text-decoration-none rounded">Settings</a></li>
-                        <li><a href="{{ url_for("auth.logout") }}" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Sign out</a></li>
+                        <li><a href="{{ url_for("auth.logout") }}"
+                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Sign out</a></li>
                     </ul>
                 </div>
             </li>

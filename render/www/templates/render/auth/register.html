@@ -1,6 +1,10 @@
 {% extends "render/auth/auth_base.html" %}
 {% block content %}
 
-    <script src="{{ url_for('auth.static', filename='render/dist/login.js') }}"></script>
+    <meta name="logo" content="{{ url_for('auth.static', filename='render/logo.svg') }}">
+    <meta name="csrf_token" content="{{ csrf_token() }}">
+    <meta name="flashed_messages" content="{{ flashed_messages }}">
+
+    <script src="{{ url_for('auth.static', filename='render/dist/register.js') }}"></script>
 
 {% endblock %}
