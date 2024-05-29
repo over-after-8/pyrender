@@ -1,4 +1,3 @@
-from flask import Flask
 from flask_login import LoginManager
 
 from render.models.user import User
