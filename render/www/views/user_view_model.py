@@ -45,7 +45,7 @@ class UserViewModel(ViewModel):
     @login_required
     def user_add(self):
         if request.method == "GET":
-            return render_template("urd/admin/user_add.html", title="Add User"), 200
+            return render_template("render/admin/user_add.html", title="Add User"), 200
         else:
             user_name = request.form.get("user_name", None)
             password = request.form.get("password", None)

@@ -1,10 +1,9 @@
 import json
 from functools import reduce
 
-from sqlalchemy import inspect, cast, or_
-
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, redirect
 from flask_login import login_required, current_user
+from sqlalchemy import inspect, or_
 
 from render.builder.utils import outside_url_for
 from render.utils.db import provide_session
@@ -19,8 +18,35 @@ class SubViewModel:
         pass
 
 
+class Field:
+    def __init__(self, name, type):
+        self.name = name
+        self.type = type
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "type": self.type
+        }
+
+
 class AddViewModel(SubViewModel):
-    pass
+    add_fields = []
+    field_types = {}
+    model_class = None
+
+    def register(self):
+        self.model_class = self.view_model_class.model_class
+        self.add_fields = self.view_model_class.add_fields
+
+    def to_dict(self):
+        fields = map(
+            lambda field_name: Field(field_name, type(getattr(self.model_class, field_name).type).__name__).to_dict(),
+            self.add_fields)
+
+        return {
+            "fields": list(fields)
+        }
 
 
 class EditViewModel(SubViewModel):
@@ -40,6 +66,7 @@ def is_relationship(model_class, field):
 
 class ListViewModel(SubViewModel):
     list_fields = []
+    field_types = {}
     items = []
 
     search_url_func = None
@@ -154,6 +181,7 @@ class ViewModel:
         self.add_view_model = add_view_model(self)
         self.edit_view_model = edit_view_model(self)
         self.detail_view_model = detail_view_model(self)
+        self.delete_view_model = delete_view_model(self)
 
     def register(self, flask_app_or_bp):
         self.bp.route("/list", methods=["GET"])(self.list_items)
@@ -195,8 +223,22 @@ class ViewModel:
         return render_template("render/list_view.html", title=f"List {self.model_class.__name__}",
                                model=json.dumps(res.to_dict(), default=str)), 200
 
-    def add_item(self):
-        return "add_item"
+    @login_required
+    @provide_session
+    def add_item(self, session=None):
+        if request.method == "GET":
+            model = self.add_view_model
+            return render_template("render/add_view.html", title=f"Add {self.model_class.__name__}",
+                                   model=json.dumps(model.to_dict(), default=str)), 200
+        else:
+            kwargs = {}
+            for field in self.add_fields:
+                kwargs[field] = request.form.get(field, None)
+                if "owner_id" in dir(self.model_class):
+                    kwargs["owner_id"] = current_user.id
+            item = self.model_class(**kwargs)
+            session.add(item)
+            return redirect(self.list_view_model.search_url_func()), 302
 
     def detail_item(self):
         return "detail_item"

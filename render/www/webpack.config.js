@@ -10,7 +10,10 @@ module.exports = {
         index: [`${JS_DIR}/index.jsx`],
         login: [`${JS_DIR}/login.jsx`],
         register: [`${JS_DIR}/register.jsx`],
-        list_view: [`${JS_DIR}/list_view.jsx`]
+        list_view: [`${JS_DIR}/list_view.jsx`],
+        add_view: [`${JS_DIR}/add_view.jsx`],
+
+        user_add_view: [`${JS_DIR}/admin/admin_user_add_view.jsx`],
     },
     output: {
         path: BUILD_DIR,

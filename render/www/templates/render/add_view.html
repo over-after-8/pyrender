@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <meta name="title" content="{{ title }}">
+    <meta name="model" content="{{ model }}">
+    <meta name="csrf_token" content="{{ csrf_token() }}">
+
+    <div id="root_container" class="pt-3"></div>
+
+    <script src="{{ url_for('admin.static', filename='dist/add_view.js') }}"></script>
+
+{% endblock %}
