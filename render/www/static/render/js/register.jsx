@@ -1,11 +1,6 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
 
-const container = document.getElementById('root_container')
-const root = createRoot(container)
-const logo = document.querySelector('meta[name="logo"]').content
-const csrf_token = document.querySelector('meta[name="csrf_token"]').content
-const flashed_messages = document.querySelector('meta[name="flashed_messages"]').content
 
 function App({logo, csrf_token, flashed_messages}) {
     flashed_messages = flashed_messages.length > 0 && JSON.parse(flashed_messages) || []
@@ -30,7 +25,8 @@ function App({logo, csrf_token, flashed_messages}) {
 
                 <div className="mb-3">
                     <label htmlFor="inputEmail1" className="form-label">Email address</label>
-                    <input type="email" className="form-control" id="email" aria-describedby="emailHelp" name={"email"}/>
+                    <input type="email" className="form-control" id="email" aria-describedby="emailHelp"
+                           name={"email"}/>
                     <div id="emailHelp" className="form-text">We'll never share your email with anyone else.</div>
                 </div>
 
@@ -49,6 +45,12 @@ function App({logo, csrf_token, flashed_messages}) {
         </>
     )
 }
+
+const container = document.getElementById('root_container')
+const root = createRoot(container)
+const logo = document.querySelector('meta[name="logo"]').content
+const csrf_token = document.querySelector('meta[name="csrf_token"]').content
+const flashed_messages = document.querySelector('meta[name="flashed_messages"]').content
 
 root.render(
     <App logo={logo} csrf_token={csrf_token} flashed_messages={flashed_messages}/>

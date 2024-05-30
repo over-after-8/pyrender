@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <meta name="title" content="{{ title }}">
+    <meta name="flashed_messages" content="{{ flashed_messages }}">
+    <meta name="url_register" content="{{ url_for('auth.register') }}">
+
+    <div id="root_container" class="pt-3"></div>
+
+    <script src="{{ url_for('admin.static', filename='dist/list_view.js') }}"></script>
+
+{% endblock %}
