@@ -1,18 +1,30 @@
 import {createRoot} from "react-dom/client";
-import React from "react";
+import React, {useState} from "react";
 
 
-function SearchBox({model}) {
+function SearchBox({search_url, keyword, page_size}) {
+
+    const [kw, setKw] = useState(keyword === "null" && "" || keyword)
+
+    const search = () => {
+        console.log(kw)
+
+        const url = kw && `${search_url}?keyword=${kw}&page=${1}&page_size=${page_size}` || `${search_url}?page=${1}&page_size=${page_size}`
+        window.location.replace(url)
+    }
+
     return (
         <>
-            <form className="row g-2" method={"GET"}>
+            <div className="row g-2">
                 <div className="col-auto">
-                    <input type="text" className="form-control" id="inputKeyword" placeholder="keyword..."/>
+                    <input type="text" className="form-control" id="inputKeyword" value={kw}
+                           onChange={(e) => setKw(e.target.value)}
+                           placeholder="keyword..."/>
                 </div>
                 <div className="col-auto">
-                    <button className="btn btn-primary mb-3">Search</button>
+                    <button className="btn btn-primary mb-3" onClick={search}>Search</button>
                 </div>
-            </form>
+            </div>
         </>
     )
 }
@@ -39,10 +51,10 @@ function DataListView({listFields, fieldTypes, items}) {
                 </thead>
                 <tbody>
 
-                {items.map(x => {
-                    return <tr>
-                        <td scope={"row"}></td>
-                        {listFields.map(c => <td>{x[c]}</td>)}
+                {items.map((x, index) => {
+                    return <tr key={`tb_row_${index}`}>
+                        <td key={`tb_act_${index}`} scope={"row"}></td>
+                        {listFields.map(c => <td key={`tb_col_${c}_${index}`}>{x[c]}</td>)}
                     </tr>
                 })}
                 </tbody>
@@ -52,22 +64,46 @@ function DataListView({listFields, fieldTypes, items}) {
     )
 }
 
-function Pagination({model}) {
+
+function Pagination({search_url, page, page_size, total, keyword}) {
+
+    const num_of_page = Math.ceil(total / page_size)
+
+    const search = (page_index) => {
+        const url = `${search_url}?keyword=${keyword}&page=${page_index}&page_size=${page_size}`
+        console.log(url)
+        window.location.replace(url)
+    }
+
+    const prev = () => {
+        search(page - 1)
+    }
+
+    const next = () => {
+        search(page + 1)
+    }
     return (
         <>
             <nav aria-label="Page navigation example">
                 <ul className="pagination">
-                    <li className="page-item">
-                        <a className="page-link" href="#" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
+                    {page > 1 &&
+                        <li className="page-item">
+                            <a className="page-link" href="#" aria-label="Previous" onClick={prev}>
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    }
+
+                    <li className="page-item"><a className="page-link"
+                                                 href="#">{(page - 1) * page_size + 1} - {Math.min(page * page_size, total)} of {total}</a>
                     </li>
-                    <li className="page-item"><a className="page-link" href="#">1 - 20 of 100</a></li>
-                    <li className="page-item">
-                        <a className="page-link" href="#" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
+                    {page < num_of_page &&
+                        <li className="page-item">
+                            <a className="page-link" href="#" aria-label="Next" onClick={next}>
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    }
                 </ul>
             </nav>
         </>
@@ -77,12 +113,14 @@ function Pagination({model}) {
 
 function App({title, model}) {
     const data = JSON.parse(model)
+    console.log(data)
     return (
         <>
             <h2>{title}</h2>
             <div className={"mt-3 row"}>
                 <div className={"col-10"}>
-                    <SearchBox></SearchBox>
+                    <SearchBox search_url={data.search_url} keyword={data.keyword}
+                               page_size={data.page_size}></SearchBox>
                 </div>
                 <div className={"col-2 text-end"}>
                     <AddBox></AddBox>
@@ -91,7 +129,8 @@ function App({title, model}) {
             <div className={"mt-1"}>
                 <DataListView listFields={data["list_fields"]} fieldTypes={data["field_types"]}
                               items={data["items"]}></DataListView>
-                <Pagination></Pagination>
+                <Pagination search_url={data.search_url} page={data.page} page_size={data.page_size}
+                            keyword={data.keyword} total={data.total}></Pagination>
             </div>
         </>
     )
