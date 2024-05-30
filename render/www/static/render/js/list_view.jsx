@@ -29,10 +29,13 @@ function SearchBox({search_url, keyword, page_size}) {
     )
 }
 
-function AddBox({model}) {
+function AddBox({add_url}) {
+    const add = () => {
+        window.location.replace(add_url)
+    }
     return (
         <>
-            <button type="button" className="btn btn-info">New</button>
+            <button type="button" className="btn btn-info" onClick={add}>New</button>
         </>
     )
 }
@@ -123,7 +126,7 @@ function App({title, model}) {
                                page_size={data.page_size}></SearchBox>
                 </div>
                 <div className={"col-2 text-end"}>
-                    <AddBox></AddBox>
+                    <AddBox add_url={data.add_url}></AddBox>
                 </div>
             </div>
             <div className={"mt-1"}>
