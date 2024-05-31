@@ -1,7 +1,7 @@
 import json
 from functools import reduce
 
-from flask import Blueprint, render_template, request, redirect
+from flask import Blueprint, render_template, request, redirect, abort
 from flask_login import login_required, current_user
 from sqlalchemy import inspect, or_
 
@@ -54,7 +54,40 @@ class EditViewModel(SubViewModel):
 
 
 class DetailViewModel(SubViewModel):
-    pass
+    actions = {}
+    show_fields = []
+    item = None
+    model_class = None
+
+    def register(self):
+        self.model_class = self.view_model_class.model_class
+        self.show_fields = self.view_model_class.show_fields
+        self.actions = self.view_model_class.actions
+
+    def map_item(self):
+        res = {}
+        for field in self.show_fields:
+            res[field] = getattr(self.item, field)
+        return res
+
+    def to_dict(self):
+        acts = {}
+        for act in self.actions:
+            acts[act] = self.actions[act](item_id=self.item.id)
+
+        field_types = {}
+        for field in self.show_fields:
+            if is_relationship(self.model_class, field):
+                field_types[field] = "Relationship"
+            else:
+                field_types[field] = type(getattr(self.model_class, field).type).__name__
+
+        return {
+            "actions": acts,
+            "show_fields": self.show_fields,
+            "field_types": field_types,
+            "item": self.map_item()
+        }
 
 
 def is_relationship(model_class, field):
@@ -240,8 +273,17 @@ class ViewModel:
             session.add(item)
             return redirect(self.list_view_model.search_url_func()), 302
 
-    def detail_item(self):
-        return "detail_item"
+    @login_required
+    @provide_session
+    def detail_item(self, item_id, session=None):
+        item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
+        if not item:
+            return abort(404)
+        res = self.detail_view_model
+        res.item = item
+
+        return render_template("render/detail_view.html", title=f"Detail {self.model_class.__name__}",
+                               model=json.dumps(res.to_dict(), default=str)), 200
 
     def edit_item(self):
         return "edit_item"
