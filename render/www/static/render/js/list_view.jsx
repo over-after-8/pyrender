@@ -40,6 +40,26 @@ function AddBox({add_url}) {
     )
 }
 
+
+function ActionColumn({item}) {
+    return (
+        <>
+            <div className={"btn-group"}>
+                <a href={item.detail_url} className={"btn btn-sm btn-outline-secondary"}
+                   style={{height: "25px", padding: "2px", width: "25px"}}>
+                <span><i
+                    className="bi bi-search"></i></span></a>
+                <a className={"btn btn-sm btn-outline-secondary"} href={item.edit_url}
+                   style={{height: "25px", padding: "2px", width: "25px"}}><span><i
+                    className="bi bi-pencil"></i></span></a>
+                <a className={"btn btn-sm btn-outline-secondary"} href={item.delete_url}
+                   style={{height: "25px", padding: "2px", width: "25px"}}><span><i
+                    className="bi bi-trash"></i></span></a>
+            </div>
+        </>
+    )
+}
+
 function DataListView({listFields, fieldTypes, items}) {
     return (
         <>
@@ -56,7 +76,9 @@ function DataListView({listFields, fieldTypes, items}) {
 
                 {items.map((x, index) => {
                     return <tr key={`tb_row_${index}`}>
-                        <td key={`tb_act_${index}`} scope={"row"}></td>
+                        <td key={`tb_act_${index}`} scope={"row"}>
+                            <ActionColumn item={x}></ActionColumn>
+                        </td>
                         {listFields.map(c => <td key={`tb_col_${c}_${index}`}>{x[c]}</td>)}
                     </tr>
                 })}
