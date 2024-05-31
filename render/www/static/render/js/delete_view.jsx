@@ -1,12 +1,13 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
+import {CSRFToken} from "./components/utils";
 
 
 function DeleteView({csrf_token}) {
     return (
         <>
             <form name={"deleteForm"} method={"post"}>
-                <input type="hidden" className="form-control" name={"csrf_token"} value={csrf_token}></input>
+                <CSRFToken csrf_token={csrf_token}></CSRFToken>
                 <div>
                     <label className={"mb-3"}>Are you sure?</label>
                 </div>

@@ -1,5 +1,6 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
+import {CSRFToken} from "./components/utils";
 
 function App({logo, csrf_token, flashed_messages, url_register}) {
 
@@ -8,7 +9,7 @@ function App({logo, csrf_token, flashed_messages, url_register}) {
         <>
 
             <form method="POST" name={"login"}>
-                <input type="hidden" name="csrf_token" value={csrf_token}/>
+                <CSRFToken csrf_token={csrf_token}></CSRFToken>
 
                 <img className="mb-4" src={logo} alt=""
                      width="72" height="57"/>

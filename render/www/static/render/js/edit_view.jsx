@@ -1,6 +1,7 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
 import Select from 'react-select'
+import {CSRFToken} from "./components/utils";
 
 
 function EditFormHelper({name, type, value, setValue, relationships}) {
@@ -84,7 +85,7 @@ function EditView({
             <div className={"row"}>
                 <div className={"col-md-6"}>
                     <form name={"editForm"} className={"smaller-font"} method={"post"}>
-                        <input type="hidden" className="form-control" name={"csrf_token"} value={csrf_token}></input>
+                        <CSRFToken csrf_token={csrf_token}></CSRFToken>
                         {
                             model.disabled_fields.map((field) => {
                                 return (
