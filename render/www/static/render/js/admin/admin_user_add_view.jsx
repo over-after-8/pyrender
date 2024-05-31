@@ -1,6 +1,6 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
-import {useForm} from "react-hook-form";
+import {useForm} from "react-hook-form"
 
 
 function AddView({csrf_token}) {
@@ -71,9 +71,8 @@ function AddView({csrf_token}) {
                         <button className={"btn btn-primary me-1"} type={"submit"}><i
                             className="bi bi-save"></i> Save
                         </button>
-                        <button className={"btn btn-outline-secondary"} onClick={() => {
-                            history.back()
-                        }}><i className="bi bi-x-lg"></i> Cancel
+                        <button className={"btn btn-outline-secondary"} onClick={() => history.back()}><i
+                            className="bi bi-x-lg"></i> Cancel
                         </button>
                     </form>
                 </div>

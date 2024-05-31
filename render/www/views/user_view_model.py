@@ -34,7 +34,7 @@ class UserViewModel(ViewModel):
                 "user_name": user_item.user_name,
                 "submit_url": url_for(".user_change_password", item_id=item_id)
             }
-            return render_template("urd/admin/user_change_password.html",
+            return render_template("render/admin/user_change_password.html",
                                    title="Change Password",
                                    model=json.dumps(res)), 200
         else:
