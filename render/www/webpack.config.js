@@ -15,6 +15,7 @@ module.exports = {
         add_view: [`${JS_DIR}/add_view.jsx`],
         detail_view: [`${JS_DIR}/detail_view.jsx`],
         edit_view: [`${JS_DIR}/edit_view.jsx`],
+        delete_view: [`${JS_DIR}/delete_view.jsx`],
 
         user_add_view: [`${JS_DIR}/admin/admin_user_add_view.jsx`],
         user_change_password_view: [`${JS_DIR}/admin/admin_user_change_password_view.jsx`]
