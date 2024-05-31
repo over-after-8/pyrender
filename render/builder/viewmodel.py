@@ -50,7 +50,34 @@ class AddViewModel(SubViewModel):
 
 
 class EditViewModel(SubViewModel):
-    pass
+    disabled_edit_fields = []
+    edit_fields = []
+    item = None
+    model_class = None
+
+    def register(self):
+        self.model_class = self.view_model_class.model_class
+        self.edit_fields = self.view_model_class.edit_fields
+        self.disabled_edit_fields = self.view_model_class.disabled_edit_fields
+
+    def to_dict(self):
+        item = {}
+        relationships = {}
+
+        for field in [*self.edit_fields, *self.disabled_edit_fields]:
+            if is_relationship(self.model_class, field):
+                item[field] = [list(map(lambda x: x.to_dict(), getattr(self.item, field))), "Relationship"]
+                model_relationship = relationship_class(self.model_class, field)
+                relationships[field] = relationship_data(model_relationship)
+            else:
+                item[field] = [getattr(self.item, field), type(getattr(self.model_class, field).type).__name__]
+
+        return {
+            "relationships": relationships,
+            "disabled_fields": self.disabled_edit_fields,
+            "edit_fields": self.edit_fields,
+            "item": item
+        }
 
 
 class DetailViewModel(SubViewModel):
@@ -95,6 +122,19 @@ def is_relationship(model_class, field):
         if rel.key == field:
             return True
     return False
+
+
+def relationship_class(model_class, field):
+    for rel in inspect(model_class).relationships:
+        if rel.key == field:
+            return rel.mapper.class_
+    return None
+
+
+@provide_session
+def relationship_data(model_class, session=None):
+    res = session.query(model_class).all()
+    return list(map(lambda x: x.to_dict(), res))
 
 
 class ListViewModel(SubViewModel):
@@ -285,8 +325,34 @@ class ViewModel:
         return render_template("render/detail_view.html", title=f"Detail {self.model_class.__name__}",
                                model=json.dumps(res.to_dict(), default=str)), 200
 
-    def edit_item(self):
-        return "edit_item"
+    @login_required
+    @provide_session
+    def edit_item(self, item_id, session=None):
+        if request.method == "GET":
+            item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
+            model = self.edit_view_model
+            model.edit_fields = self.edit_fields
+            model.disabled_edit_fields = self.disabled_edit_fields
+            model.item = item
+            return render_template("render/edit_view.html", title=f"Edit {self.model_class.__name__}",
+                                   model=json.dumps(model.to_dict(), default=str)), 200
+        else:
+            item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
+            for field in self.edit_fields:
+                if field in self.disabled_edit_fields:
+                    continue
+
+                if is_relationship(self.model_class, field):
+                    req_value = request.form.getlist(field)
+                    rel_class = relationship_class(self.model_class, field)
+                    value = session.query(rel_class).filter(rel_class.id.in_(req_value)).all()
+                else:
+                    value = request.form.get(field, None)
+                    if type(getattr(self.model_class, field).type).__name__ == "Boolean":
+                        value = bool(int(request.form.get(field, False)))
+                setattr(item, field, value)
+            session.add(item)
+            return redirect(self.list_view_model.search_url_func()), 302
 
     def delete_item(self):
         return "delete_item"
