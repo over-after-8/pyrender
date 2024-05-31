@@ -1,5 +1,6 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
+import {CSRFToken} from "./components/utils";
 
 
 function AddFormHelper({name, type}) {
@@ -28,7 +29,7 @@ function AddView({model, csrf_token}) {
             <div className={"row"}>
                 <div className={"col-md-6"}>
                     <form name={"addForm"} className={"smaller-font"} method={"post"}>
-                        <input type="hidden" className="form-control" name={"csrf_token"} value={csrf_token}></input>
+                        <CSRFToken csrf_token={csrf_token}></CSRFToken>
                         {
                             model.fields.map((field) => {
                                 return (

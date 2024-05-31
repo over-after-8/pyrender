@@ -1,6 +1,7 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
 import {useForm} from "react-hook-form"
+import {CSRFToken} from "../components/utils";
 
 
 function AddView({csrf_token}) {
@@ -27,7 +28,7 @@ function AddView({csrf_token}) {
                 <div className={"col-md-6"}>
                     <form name={"mainForm"} method={"post"} autoComplete={"new-password"}
                           onSubmit={handleSubmit(onSubmit)}>
-                        <input type="hidden" className="form-control" name={"csrf_token"} value={csrf_token}></input>
+                        <CSRFToken csrf_token={csrf_token}></CSRFToken>
                         <div className="mb-3 form-group">
                             <label>User name</label>
                             <input className="form-control" type="input" placeholder="name@example.com"

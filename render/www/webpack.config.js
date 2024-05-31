@@ -6,8 +6,13 @@ const JS_DIR = path.resolve(__dirname, './static/render/js');
 const BUILD_DIR = path.resolve(__dirname, './static/render/dist');
 
 module.exports = {
+    resolve: {
+        extensions: ['.js', '.jsx']
+    },
     entry: {
         index: [`${JS_DIR}/index.jsx`],
+        utils: [`${JS_DIR}/components/utils.jsx`],
+
         login: [`${JS_DIR}/login.jsx`],
         register: [`${JS_DIR}/register.jsx`],
 
@@ -44,5 +49,6 @@ module.exports = {
         ]
     },
 
-    plugins: []
+    plugins: [],
+
 };
