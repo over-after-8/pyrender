@@ -354,5 +354,16 @@ class ViewModel:
             session.add(item)
             return redirect(self.list_view_model.search_url_func()), 302
 
-    def delete_item(self):
-        return "delete_item"
+    @login_required
+    @provide_session
+    def delete_item(self, item_id, session=None):
+        item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
+        if request.method == "GET":
+            item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
+            if not item:
+                return abort(404)
+            return render_template("render/delete_view.html", title=f"Delete {self.model_class.__name__}")
+        else:
+            session.delete(item)
+            return redirect(self.list_view_model.search_url_func()), 302
+
