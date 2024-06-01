@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'render/application_base.html' %}
 
 {% block content %}
 
@@ -6,8 +6,8 @@
     <meta name="flashed_messages" content="{{ flashed_messages }}">
     <meta name="url_register" content="{{ url_for('auth.register') }}">
 
-    <div id="root_container" class="pt-3"></div>
-
-    <script src="{{ url_for('admin.static', filename='dist/list_view.js') }}"></script>
+    <div id="root_container" class="pt-3">
+        <h2>Welcome to Admin Zone</h2>
+    </div>
 
 {% endblock %}
