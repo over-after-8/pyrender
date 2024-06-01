@@ -42,6 +42,10 @@
                         </li>
                     {% endfor %}
                 </ul>
+                <button class="btn btn-outline-danger">
+                    <a class="nav-link active" href="{{ url_for('auth.logout') }}">Logout</a>
+                </button>
+
             </div>
         </div>
     </nav>
