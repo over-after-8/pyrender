@@ -66,3 +66,9 @@ main {
 .scrollarea {
     overflow-y: auto;
 }
+
+.b-example-vr {
+    flex-shrink: 0;
+    width: 2px;
+    height: 100vh;
+}

@@ -2,6 +2,38 @@ import {createRoot} from "react-dom/client";
 import React, {useState} from "react";
 
 
+function ListViewHelper({value, type, row_id}) {
+
+    switch (type) {
+        case "Boolean":
+            return (
+                <input className="form-check-input" disabled type="checkbox" checked={value}></input>
+            )
+        case "Relationship":
+            if (typeof value === "string") {
+                return (
+                    <span>{value}</span>
+                )
+            } else {
+                return (
+                    <>
+                        {
+                            value.map((item) => {
+                                return <span className={"badge text-bg-secondary me-1"}
+                                             key={`${row_id}_${item}`}>{item}</span>
+                            })
+                        }
+                    </>
+                )
+            }
+        default:
+            return (
+                <span>{value}</span>
+            )
+    }
+}
+
+
 function SearchBox({search_url, keyword, page_size}) {
 
     const [kw, setKw] = useState(keyword === "null" && "" || keyword)
@@ -35,7 +67,7 @@ function AddBox({add_url}) {
     }
     return (
         <>
-            <button type="button" className="btn btn-info" onClick={add}>New</button>
+            <button type="button" className="btn btn-outline-success" onClick={add}>New</button>
         </>
     )
 }
@@ -79,7 +111,15 @@ function DataListView({listFields, fieldTypes, items}) {
                         <td key={`tb_act_${index}`} scope={"row"}>
                             <ActionColumn item={x}></ActionColumn>
                         </td>
-                        {listFields.map(c => <td key={`tb_col_${c}_${index}`}>{x[c]}</td>)}
+                        {
+                            listFields.map((field) => {
+                                return <td key={`${x.id}_${field}`}><ListViewHelper key={`f_${x.id}_${field}`}
+                                                                                       row_id={x.id}
+                                                                                       type={fieldTypes[field]}
+                                                                                       value={x[field]}></ListViewHelper>
+                                </td>
+                            })
+                        }
                     </tr>
                 })}
                 </tbody>

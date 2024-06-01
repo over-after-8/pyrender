@@ -23,99 +23,31 @@
 
 <body style="background: #dadada">
 <main class="d-flex flex-nowrap">
-    <div class="flex-shrink-0 p-3" style="width: 280px; background: white">
-        <a href="/" class="d-flex align-items-center pb-3 mb-3 link-body-emphasis text-decoration-none border-bottom">
-            <img class="me-2" src="{{ url_for('auth.static', filename='render/logo.svg') }}" alt=""
-                 width="30" height="24"/>
-            <span class="fs-5 fw-semibold">PyRender</span>
-        </a>
-        <ul class="list-unstyled ps-0">
-            <li class="mb-1">
-                <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0"
-                        data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="true">
-                    Home
-                </button>
-                <div class="collapse show" id="home-collapse" style="">
-                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Overview</a></li>
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Updates</a></li>
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Reports</a></li>
-                    </ul>
-                </div>
-            </li>
-            <li class="mb-1">
-                <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0"
-                        data-bs-toggle="collapse" data-bs-target="#dashboard-collapse" aria-expanded="true">
-                    Dashboard
-                </button>
-                <div class="collapse show" id="dashboard-collapse" style="">
-                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Overview</a></li>
-                        <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Weekly</a>
+    {% set applications = inject_applications() %}
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <img class="me-2" src="{{ url_for('auth.static', filename='render/logo.svg') }}" alt=""
+                     width="30" height="24"/><strong>PyRender</strong></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                    aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    {% for application in applications %}
+                        {% set url = url_for("{}.index".format(application.bp.name)) %}
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="{{ url }}">{{ application.name }}</a>
                         </li>
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Monthly</a></li>
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Annually</a></li>
-                    </ul>
-                </div>
-            </li>
-            <li class="mb-1">
-                <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0"
-                        data-bs-toggle="collapse" data-bs-target="#orders-collapse" aria-expanded="true">
-                    Orders
-                </button>
-                <div class="collapse show" id="orders-collapse" style="">
-                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                        <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">New</a>
-                        </li>
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Processed</a></li>
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Shipped</a></li>
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Returned</a></li>
-                    </ul>
-                </div>
-            </li>
-            <li class="border-top my-3"></li>
-            <li class="mb-1">
-                <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0"
-                        data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="true">
-                    Account
-                </button>
-                <div class="collapse show" id="account-collapse" style="">
-                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                        <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">New...</a>
-                        </li>
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Profile</a></li>
-                        <li><a href="#"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Settings</a></li>
-                        <li><a href="{{ url_for("auth.logout") }}"
-                               class="link-body-emphasis d-inline-flex text-decoration-none rounded">Sign out</a></li>
-                    </ul>
-                </div>
-            </li>
-        </ul>
-    </div>
-    <div class="b-example-divider b-example-vr"></div>
-    <div class="container-fluid">
-        <div style="background: white; height: 100vh">
-            <div class="container-fluid">
-                {% block content %}
-
-                {% endblock %}
+                    {% endfor %}
+                </ul>
             </div>
-
         </div>
+    </nav>
+    {% block application_content %}
 
-    </div>
-
+    {% endblock %}
 </main>
 </body>
 
