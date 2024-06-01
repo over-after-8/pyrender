@@ -16,7 +16,7 @@ function DeleteView({csrf_token}) {
                         type={"submit"}><i
                     className="bi bi-trash"></i> Delete
                 </button>
-                <button className={"btn btn-outline-secondary"} onClick={() => {
+                <button type={"button"} className={"btn btn-outline-secondary"} onClick={() => {
                     history.back()
                 }}><i className="bi bi-x-lg"></i> Cancel
                 </button>
@@ -43,5 +43,5 @@ const csrf_token = document.querySelector('meta[name="csrf_token"]').content
 
 
 root.render(
-    <App title={title} model={model} csrf_token={csrf_token}/>
+    <App title={title} csrf_token={csrf_token}/>
 )

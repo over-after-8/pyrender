@@ -1,9 +1,8 @@
-{% extends 'base.html' %}
+{% extends 'render/application_base.html' %}
 
 {% block content %}
 
     <meta name="title" content="{{ title }}">
-    <meta name="model" content="{{ model }}">
     <meta name="csrf_token" content="{{ csrf_token() }}">
 
     <div id="root_container" class="pt-3"></div>

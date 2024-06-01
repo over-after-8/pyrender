@@ -41,7 +41,7 @@ function ShowViewHelper({value, type}) {
                 return (
                     <>
                         {
-                            value.map((item) => {
+                            value.map((item, row_id) => {
                                 return <span className="badge text-bg-secondary me-2"
                                              key={`${row_id}_${item}`}>{item}</span>
                             })
