@@ -82,7 +82,7 @@ function ShowView({model}) {
                 })}
                 </tbody>
             </table>
-            <button className={"btn btn-outline-secondary"} onClick={() => {
+            <button type={"button"} className={"btn btn-outline-secondary"} onClick={() => {
                 history.back()
             }}><i className="bi bi-arrow-bar-left"></i> Back
             </button>

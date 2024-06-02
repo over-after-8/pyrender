@@ -23,9 +23,9 @@ class CompileAssert(Command):
 
     def run(self) -> None:
         www_dir = SOURCES_ROOT / "render" / "www"
-        subprocess.check_call(["yarn", "config", "set", "strict-ssl", "false", "-g"], cwd=str(www_dir))
-        subprocess.check_call(["yarn", "install", "--frozen-lockfile"], cwd=str(www_dir))
-        subprocess.check_call(["yarn", "run", "build"], cwd=str(www_dir))
+        # subprocess.check_call(["yarn", "config", "set", "strict-ssl", "false", "-g"], cwd=str(www_dir))
+        subprocess.check_call(["npm", "install", "--frozen-lockfile"], cwd=str(www_dir))
+        subprocess.check_call(["npm", "run", "build"], cwd=str(www_dir))
 
 
 class CleanCommand(Command):

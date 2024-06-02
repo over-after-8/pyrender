@@ -44,7 +44,7 @@ function AddView({model, csrf_token}) {
                         <button className={"btn btn-success me-1"} type={"submit"}>
                             <i className="bi bi-plus-lg"></i> Add
                         </button>
-                        <button className={"btn btn-outline-danger"} onClick={() => {
+                        <button type={"button"} className={"btn btn-outline-danger"} onClick={() => {
                             history.back()
                         }}><i className="bi bi-x-lg"></i> Cancel
                         </button>

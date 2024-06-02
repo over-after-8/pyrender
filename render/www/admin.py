@@ -13,13 +13,13 @@ from render.www.views.user_view_model import UserViewModel
 
 
 class Menu:
-    _items = []
 
     def __init__(self, root):
         self.root = root
+        self.items = []
 
     def add_item(self, menu_item):
-        self._items.append(menu_item)
+        self.items.append(menu_item)
 
     def get(self):
         # TODO check permissions
@@ -31,7 +31,7 @@ class Menu:
             res[item.category].append(item)
             return res
 
-        return reduce(lambda r, x: update_res(r, x), self._items, {})
+        return reduce(lambda r, x: update_res(r, x), self.items, {})
 
 
 class MenuItem:
@@ -80,12 +80,6 @@ class Application:
 
     def routes(self):
         pass
-
-
-class MenuBluePrint(Blueprint):
-    def __init__(self, menu, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.menu = menu
 
 
 class Admin(Application):

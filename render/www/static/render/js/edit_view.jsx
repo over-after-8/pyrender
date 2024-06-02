@@ -114,7 +114,7 @@ function EditView({
                         <button className={"btn btn-primary me-2"} type={"submit"}><i
                             className="bi bi-save"></i> Save
                         </button>
-                        <button className={"btn btn-outline-secondary"} onClick={() => {
+                        <button type={"button"} className={"btn btn-outline-secondary"} onClick={() => {
                             history.back()
                         }}><i className="bi bi-x-lg"></i> Cancel
                         </button>

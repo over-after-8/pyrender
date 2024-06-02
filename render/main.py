@@ -10,13 +10,13 @@ main_app = Flask(__name__)
 @main_app.route("/", methods=["GET"])
 @login_required
 def index():
-    return render_template("index.html")
+    return render_template("render/index.html")
 
 
 if __name__ == '__main__':
     WTF_CSRF_SECRET_KEY = 'secret_key'
 
-    main_app = create_app(main_app)
+    main_app = create_app(main_app, [])
 
     main_app.secret_key = WTF_CSRF_SECRET_KEY
 
