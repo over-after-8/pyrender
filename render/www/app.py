@@ -1,10 +1,8 @@
-from typing import List
-
 from flask_login import LoginManager
 
 from render.models.user import User
 from render.www import auth
-from render.www.admin import Admin, Application
+from render.www.admin import Admin
 from render.www.utils import path_for
 
 
