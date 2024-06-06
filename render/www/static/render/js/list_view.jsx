@@ -114,9 +114,9 @@ function DataListView({listFields, fieldTypes, items}) {
                         {
                             listFields.map((field) => {
                                 return <td key={`${x.id}_${field}`}><ListViewHelper key={`f_${x.id}_${field}`}
-                                                                                       row_id={x.id}
-                                                                                       type={fieldTypes[field]}
-                                                                                       value={x[field]}></ListViewHelper>
+                                                                                    row_id={x.id}
+                                                                                    type={fieldTypes[field]}
+                                                                                    value={x[field]}></ListViewHelper>
                                 </td>
                             })
                         }
@@ -135,8 +135,11 @@ function Pagination({search_url, page, page_size, total, keyword}) {
     const num_of_page = Math.ceil(total / page_size)
 
     const search = (page_index) => {
-        const url = `${search_url}?keyword=${keyword}&page=${page_index}&page_size=${page_size}`
-        console.log(url)
+        let url = `${search_url}?page=${page_index}&page_size=${page_size}`
+        if (keyword !== null) {
+            url = `${url}&keyword=${keyword}`
+        }
+
         window.location.replace(url)
     }
 
