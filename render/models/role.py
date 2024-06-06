@@ -19,7 +19,7 @@ class Role(Base):
     __tablename__ = "roles"
 
     id = mapped_column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
-    name = Column(String(63), nullable=False, index=True)
+    name = Column(String(63), unique=True, nullable=False, index=True)
 
     permissions: Mapped[List[Permission]] = relationship(secondary=role_permissions)
 

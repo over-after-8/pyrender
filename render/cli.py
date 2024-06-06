@@ -1,8 +1,11 @@
 import argparse
 import logging
 
+from render.builder.utils import inheritors
+from render.builder.viewmodel import ViewModel
 from render.models.permission import Permission
 from render.models.role import Role, role_permissions
+from render.utils.db import provide_session
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +61,31 @@ def version(arg):
     print(v)
 
 
+def init_permissions():
+    from render.www.views.permission_view_model import PermissionViewModel
+    from render.www.views.role_view_model import RoleViewModel
+    from render.www.views.user_view_model import UserViewModel
+
+    view_model_classes = map(lambda x: x.__name__, inheritors(ViewModel))
+    base_permissions = {
+        "read_everything",
+        "create_everything",
+        "update_everything",
+        "delete_everything",
+        "read_owned",
+        "update_owned",
+        "delete_owned"
+    }
+
+    @provide_session
+    def add_permissions(perms, session=None):
+        session.bulk_save_objects(perms)
+        session.commit()
+
+    permissions = [Permission(name=f"{vmc.lower()}_{p}") for vmc in view_model_classes for p in base_permissions]
+    add_permissions(permissions)
+
+
 def db_init(arg):
     from render.models.user import User
     from sqlalchemy.exc import OperationalError
@@ -73,6 +101,8 @@ def db_init(arg):
         role_permissions.create(setting.mysql_engine, checkfirst=True)
 
         User.add("a@mail.com", "a")
+
+        init_permissions()
 
     except OperationalError as e:
         logger.error(e)

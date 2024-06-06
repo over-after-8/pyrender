@@ -43,7 +43,7 @@ class User(Base, UserMixin):
     __tablename__ = "users"
 
     id = mapped_column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
-    user_name = Column(String(63), nullable=False, index=True)
+    user_name = Column(String(63), unique=True, nullable=False, index=True)
     password = Column(String(4095), nullable=False, index=False)
     salt = Column(String(7), nullable=False, index=False)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
