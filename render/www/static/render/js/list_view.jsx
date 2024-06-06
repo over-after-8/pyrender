@@ -95,7 +95,7 @@ function ActionColumn({item}) {
 function DataListView({listFields, fieldTypes, items}) {
     return (
         <>
-            <table className="table table-bordered table-hover">
+            <table className="table table-bordered table-hover table-sm">
                 <thead>
                 <tr>
                     <th scope="col">#</th>
