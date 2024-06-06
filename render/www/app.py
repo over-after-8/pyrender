@@ -14,7 +14,6 @@ def create_app(app, applications):
     login_manager.login_view = "auth.login"
 
     admin = Admin("AdminZone")
-
     applications.append(admin)
 
     @login_manager.user_loader
