@@ -132,6 +132,22 @@ def relationship_class(model_class, field):
 
 
 @provide_session
+def permissions_by_user(session=None):
+    pass
+
+
+def check_permission(*arg):
+    def check_func(func):
+        def wrap_func(self_object, *arg, **kwarg):
+            view_model_name = self_object.__class__.__name__
+            required_permission = [f"{view_model_name}.{x}" for x in arg]
+            # check permissions here
+            return func(self_object, *arg, **kwarg)
+        return wrap_func
+    return check_func
+
+
+@provide_session
 def relationship_data(model_class, session=None):
     res = session.query(model_class).all()
     return list(map(lambda x: x.to_dict(), res))
@@ -326,6 +342,7 @@ class ViewModel:
                                model=json.dumps(res.to_dict(), default=str)), 200
 
     @login_required
+    @check_permission("edit", "edit.all")
     @provide_session
     def edit_item(self, item_id, session=None):
         if request.method == "GET":
@@ -355,6 +372,7 @@ class ViewModel:
             return redirect(self.list_view_model.search_url_func()), 302
 
     @login_required
+    @check_permission("edit", "edit.all")
     @provide_session
     def delete_item(self, item_id, session=None):
         item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
