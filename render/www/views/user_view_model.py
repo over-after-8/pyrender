@@ -1,7 +1,7 @@
 import json
 
 from flask import request, url_for, render_template, redirect
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from render.builder.utils import outside_url_for
 from render.builder.viewmodel import ViewModel
@@ -51,5 +51,5 @@ class UserViewModel(ViewModel):
             password = request.form.get("password", None)
             if user_name is None or password is None:
                 return json.dumps({"status": "failed"}), 400
-            User.add(user_name, password)
+            User.add(user_name, password, current_user.id)
             return redirect(self.list_view_model.search_url_func())

@@ -1,11 +1,13 @@
 import json
-from functools import reduce
+from functools import reduce, wraps
 
 from flask import Blueprint, render_template, request, redirect, abort
 from flask_login import login_required, current_user
-from sqlalchemy import inspect, or_
+from sqlalchemy import inspect, or_, and_
 
 from render.builder.utils import outside_url_for
+from render.models.permission import Permission
+from render.models.user import User
 from render.utils.db import provide_session
 
 
@@ -129,6 +131,44 @@ def relationship_class(model_class, field):
         if rel.key == field:
             return rel.mapper.class_
     return None
+
+
+@provide_session
+def permissions_by_user(user_id, session=None):
+    res = reduce(lambda r, x: r + x.permissions, current_user.roles, [])
+    return res
+
+
+@provide_session
+def owned_by(model_class, item_id, session=None):
+    res = session.query(model_class).filter(
+        and_(model_class.id == item_id, model_class.created_by == current_user.id)).one_or_none()
+    return bool(res)
+
+
+def check_permission(permission):
+    def check_func(func):
+        @wraps(func)
+        def wrap_func(self_object, item_id, *arg, **kwarg):
+            view_model_name = self_object.__class__.__name__
+            required_permission = f"{view_model_name.lower()}.{permission}"
+            permissions = permissions_by_user(current_user.id)
+            all_permission = list(
+                filter(lambda x: required_permission in x.name and x.name.endswith(".all"), permissions))
+            if all_permission:
+                return func(self_object, item_id, *arg, **kwarg)
+
+            existed_permission = list(filter(lambda x: required_permission in x.name, permissions))
+            if existed_permission:
+                if owned_by(self_object.model_class, item_id):
+                    return func(self_object, item_id, *arg, **kwarg)
+                else:
+                    return abort(403)
+            return abort(403)
+
+        return wrap_func
+
+    return check_func
 
 
 @provide_session
@@ -307,14 +347,15 @@ class ViewModel:
             kwargs = {}
             for field in self.add_fields:
                 kwargs[field] = request.form.get(field, None)
-                if "owner_id" in dir(self.model_class):
-                    kwargs["owner_id"] = current_user.id
+                if "created_by" in dir(self.model_class):
+                    kwargs["created_by"] = current_user.id
             item = self.model_class(**kwargs)
             session.add(item)
             return redirect(self.list_view_model.search_url_func()), 302
 
     @login_required
     @provide_session
+    @check_permission("list")
     def detail_item(self, item_id, session=None):
         item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
         if not item:
@@ -327,6 +368,7 @@ class ViewModel:
 
     @login_required
     @provide_session
+    @check_permission("edit")
     def edit_item(self, item_id, session=None):
         if request.method == "GET":
             item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
@@ -356,6 +398,7 @@ class ViewModel:
 
     @login_required
     @provide_session
+    @check_permission("delete")
     def delete_item(self, item_id, session=None):
         item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
         if request.method == "GET":
@@ -366,4 +409,3 @@ class ViewModel:
         else:
             session.delete(item)
             return redirect(self.list_view_model.search_url_func()), 302
-

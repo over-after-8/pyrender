@@ -70,7 +70,7 @@ class User(Base, UserMixin):
 
     @staticmethod
     @provide_session
-    def add(user_name, password, session=None):
+    def add(user_name, password, created_by, session=None):
         salt = generate_random_string()
         password = MD5.hash_string(password, salt)
         user = User()
@@ -79,6 +79,7 @@ class User(Base, UserMixin):
         user.salt = salt
         user.full_name = user_name.split("@")[0]
         user.is_active = True
+        user.created_by = created_by
 
         return session.add(user)
 

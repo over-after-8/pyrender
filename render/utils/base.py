@@ -1,6 +1,6 @@
 from sqlalchemy import Column, TIMESTAMP, func, ForeignKey, BigInteger, Integer
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, mapped_column
 
 Base = declarative_base()
 
@@ -8,6 +8,7 @@ Base = declarative_base()
 def basic_fields(cls):
     cls.created_at = Column(TIMESTAMP, default=func.now(), nullable=False)
     cls.updated_at = Column(TIMESTAMP, default=func.now(), nullable=False)
+    cls.created_by = mapped_column(ForeignKey("users.id"))
 
     return cls
 

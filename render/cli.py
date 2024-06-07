@@ -5,6 +5,7 @@ from render.builder.utils import inheritors
 from render.builder.viewmodel import ViewModel
 from render.models.permission import Permission
 from render.models.role import Role, role_permissions
+from render.models.user import User
 from render.utils.db import provide_session
 
 logger = logging.getLogger(__name__)
@@ -61,20 +62,61 @@ def version(arg):
     print(v)
 
 
-def init_permissions():
+@provide_session
+def init_roles(user, session=None):
+    from render.www.views.permission_view_model import PermissionViewModel
+    from render.www.views.role_view_model import RoleViewModel
+    from render.www.views.user_view_model import UserViewModel
+
+    view_model_classes = list(map(lambda x: x.__name__, inheritors(ViewModel)))
+    base_roles = {
+        "user",
+        "editor",
+        "viewer"
+    }
+
+    def add_roles(roles):
+        for role in roles:
+            session.add(role)
+            session.commit()
+
+    def permissions(vmc, perms):
+        res = [session.query(Permission).filter(Permission.name == f"{vmc.lower()}.{p}").one_or_none()
+               for p in perms]
+        return res
+
+    user_roles = [Role(name=f"{vmc.lower()}.user", created_by=user.id,
+                       permissions=permissions(vmc, {"add", "edit", "delete", "list"}))
+                  for vmc in view_model_classes]
+
+    editor_roles = [Role(name=f"{vmc.lower()}.editor", created_by=user.id,
+                         permissions=permissions(vmc, {"edit.all", "add", "delete.all", "list.all"}))
+                    for vmc in view_model_classes]
+
+    viewer_roles = [
+        Role(name=f"{vmc.lower()}.viewer", created_by=user.id, permissions=permissions(vmc, {"list.all"}))
+        for vmc in view_model_classes]
+
+    add_roles(user_roles + editor_roles + viewer_roles)
+    update_user = session.query(User).filter(User.id == user.id).one_or_none()
+    update_user.roles = user_roles + editor_roles + viewer_roles
+    session.add(update_user)
+
+
+def init_permissions(user):
     from render.www.views.permission_view_model import PermissionViewModel
     from render.www.views.role_view_model import RoleViewModel
     from render.www.views.user_view_model import UserViewModel
 
     view_model_classes = map(lambda x: x.__name__, inheritors(ViewModel))
     base_permissions = {
-        "read_everything",
-        "create_everything",
-        "update_everything",
-        "delete_everything",
-        "read_owned",
-        "update_owned",
-        "delete_owned"
+        "edit.all",
+        "delete.all",
+        "edit",
+        "delete",
+        "add",
+        "list",
+        "list.all"
     }
 
     @provide_session
@@ -82,11 +124,13 @@ def init_permissions():
         session.bulk_save_objects(perms)
         session.commit()
 
-    permissions = [Permission(name=f"{vmc.lower()}_{p}") for vmc in view_model_classes for p in base_permissions]
+    permissions = [Permission(name=f"{vmc.lower()}.{p}", created_by=user.id) for vmc in view_model_classes for p in
+                   base_permissions]
     add_permissions(permissions)
 
 
-def db_init(arg):
+@provide_session
+def db_init(arg, session=None):
     from render.models.user import User
     from sqlalchemy.exc import OperationalError
 
@@ -100,9 +144,11 @@ def db_init(arg):
         user_roles.create(setting.mysql_engine, checkfirst=True)
         role_permissions.create(setting.mysql_engine, checkfirst=True)
 
-        User.add("a@mail.com", "a")
+        User.add("a@mail.com", "a", 1)
+        user = session.query(User).filter(User.user_name == "a@mail.com").one_or_none()
 
-        init_permissions()
+        init_permissions(user)
+        init_roles(user)
 
     except OperationalError as e:
         logger.error(e)
@@ -126,3 +172,7 @@ class APPFactory(object):
         for app in APPFactory.apps:
             app.add_to_parser(sub_parsers)
         return parser
+
+
+if __name__ == '__main__':
+    db_init([])
