@@ -1,6 +1,9 @@
+from functools import reduce
+
 from flask_login import LoginManager
 
 from render.models.user import User
+from render.utils.db import provide_session
 from render.www import auth
 from render.www.admin import Admin
 from render.www.utils import path_for
@@ -17,8 +20,12 @@ def create_app(app, applications):
     applications.append(admin)
 
     @login_manager.user_loader
-    def load_user(user_id):
-        return User.get(user_id)
+    @provide_session
+    def load_user(user_id, session=None):
+        user = session.query(User).filter(User.id == user_id).one_or_none()
+        roles = user.roles
+        permissions = reduce(lambda r, x: r + x.permissions, roles, [])
+        return user
 
     @app.context_processor
     def utility_processor():
