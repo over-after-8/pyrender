@@ -2,11 +2,23 @@ from functools import reduce
 
 from flask_login import LoginManager
 
+from render.models.module import Module
 from render.models.user import User
 from render.utils.db import provide_session
 from render.www import auth
-from render.www.admin import Admin
+from render.www.admin import admin_application
 from render.www.utils import path_for
+
+
+def get_class(class_name):
+    from importlib import import_module
+
+    try:
+        module_path, class_name = class_name.rsplit('.', 1)
+        module = import_module(module_path)
+        return getattr(module, class_name)
+    except (ImportError, AttributeError) as e:
+        raise ImportError(class_name)
 
 
 def create_app(app, applications):
@@ -16,8 +28,7 @@ def create_app(app, applications):
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
 
-    admin = Admin("AdminZone")
-    applications.append(admin)
+    applications.append(admin_application)
 
     @login_manager.user_loader
     @provide_session
@@ -25,12 +36,18 @@ def create_app(app, applications):
         user = session.query(User).filter(User.id == user_id).one_or_none()
         roles = user.roles
         permissions = reduce(lambda r, x: r + x.permissions, roles, [])
+        modules = user.modules
         return user
 
     @app.context_processor
     def utility_processor():
-        def inject_applications():
-            return applications
+        @provide_session
+        def load_application_by_user(user_id, session=None):
+            user = session.query(User).filter(User.id == user_id).one_or_none()
+            return [get_class(x.class_name)(x.name) for x in user.modules]
+
+        def inject_applications(user_id):
+            return load_application_by_user(user_id)
 
         return dict(inject_applications=inject_applications, path_for=path_for)
 

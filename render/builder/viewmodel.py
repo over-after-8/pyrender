@@ -62,15 +62,15 @@ class EditViewModel(SubViewModel):
         self.edit_fields = self.view_model_class.edit_fields
         self.disabled_edit_fields = self.view_model_class.disabled_edit_fields
 
-    def to_dict(self):
+    def to_dict(self, session=None):
         item = {}
         relationships = {}
 
         for field in [*self.edit_fields, *self.disabled_edit_fields]:
             if is_relationship(self.model_class, field):
-                item[field] = [list(map(lambda x: x.to_dict(), getattr(self.item, field))), "Relationship"]
+                item[field] = [list(map(lambda x: x.to_dict(session), getattr(self.item, field))), "Relationship"]
                 model_relationship = relationship_class(self.model_class, field)
-                relationships[field] = relationship_data(model_relationship)
+                relationships[field] = relationship_data(model_relationship, session)
             else:
                 item[field] = [getattr(self.item, field), type(getattr(self.model_class, field).type).__name__]
 
@@ -194,7 +194,7 @@ def check_permission(permission):
 @provide_session
 def relationship_data(model_class, session=None):
     res = session.query(model_class).all()
-    return list(map(lambda x: x.to_dict(), res))
+    return list(map(lambda x: x.to_dict(session), res))
 
 
 class ListViewModel(SubViewModel):
@@ -395,8 +395,9 @@ class ViewModel:
             model.edit_fields = self.edit_fields
             model.disabled_edit_fields = self.disabled_edit_fields
             model.item = item
+            model_json = json.dumps(model.to_dict(session), default=str)
             return render_template("render/edit_view.html", title=f"Edit {self.model_class.__name__}",
-                                   model=json.dumps(model.to_dict(), default=str)), 200
+                                   model=model_json), 200
         else:
             item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
             for field in self.edit_fields:

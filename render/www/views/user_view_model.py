@@ -9,11 +9,11 @@ from render.models.user import User
 
 
 class UserViewModel(ViewModel):
-    list_fields = ["id", "user_name", "full_name", "roles", "is_active", "created_at", "updated_at"]
+    list_fields = ["id", "user_name", "full_name", "roles", "modules", "is_active", "created_at", "updated_at"]
     search_fields = ["user_name", "full_name"]
     add_fields = ["user_name", "full_name", "password", "is_active"]
-    show_fields = ["user_name", "full_name", "is_active", "roles", "created_at", "updated_at"]
-    edit_fields = ["full_name", "is_active", "roles"]
+    show_fields = ["user_name", "full_name", "is_active", "roles", "modules", "created_at", "updated_at"]
+    edit_fields = ["full_name", "is_active", "roles", "modules"]
     disabled_edit_fields = ["user_name"]
     add_url_func = outside_url_for(".user_add")
 

@@ -8,6 +8,7 @@ from flask_login import UserMixin
 from sqlalchemy import BigInteger, Column, String, TIMESTAMP, func, Boolean, ForeignKey, Table
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
+from render.models.module import user_modules, Module
 from render.models.role import Role
 from render.utils.base import Base, basic_fields
 from render.utils.db import provide_session
@@ -50,6 +51,7 @@ class User(Base, UserMixin):
     full_name = Column(String(63), nullable=True, index=True)
 
     roles: Mapped[List[Role]] = relationship(secondary=user_roles)
+    modules: Mapped[List[Module]] = relationship(secondary=user_modules)
 
     def __repr__(self):
         return self.user_name
