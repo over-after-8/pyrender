@@ -3,6 +3,7 @@ import logging
 
 from render.builder.utils import inheritors
 from render.builder.viewmodel import ViewModel
+from render.models.module import user_modules, Module
 from render.models.permission import Permission
 from render.models.role import Role, role_permissions
 from render.models.user import User
@@ -62,11 +63,34 @@ def version(arg):
     print(v)
 
 
+def fullname(klass):
+    module = klass.__module__
+    if module == 'builtins':
+        return klass.__qualname__
+    return module + '.' + klass.__qualname__
+
+
+@provide_session
+def init_applications(user, session=None):
+    from render.www.admin import admin_application
+
+    applications = [admin_application]
+    application_objects = list(
+        map(lambda x: Module(name=x.name, created_by=user.id, class_name=fullname(x.__class__)), applications))
+    for a in application_objects:
+        session.add(a)
+
+    update_user = session.query(User).filter(User.id == user.id).one_or_none()
+    update_user.modules = application_objects
+    session.add(update_user)
+
+
 @provide_session
 def init_roles(user, session=None):
-    from render.www.views.permission_view_model import PermissionViewModel
     from render.www.views.role_view_model import RoleViewModel
     from render.www.views.user_view_model import UserViewModel
+    from render.www.views.permission_view_model import PermissionViewModel
+    from render.www.views.module_view_model import ModuleViewModel
 
     view_model_classes = list(map(lambda x: x.__name__, inheritors(ViewModel)))
     base_roles = {
@@ -104,9 +128,10 @@ def init_roles(user, session=None):
 
 
 def init_permissions(user):
-    from render.www.views.permission_view_model import PermissionViewModel
     from render.www.views.role_view_model import RoleViewModel
     from render.www.views.user_view_model import UserViewModel
+    from render.www.views.permission_view_model import PermissionViewModel
+    from render.www.views.module_view_model import ModuleViewModel
 
     view_model_classes = map(lambda x: x.__name__, inheritors(ViewModel))
     base_permissions = {
@@ -141,14 +166,17 @@ def db_init(arg, session=None):
         User.__table__.create(setting.mysql_engine, checkfirst=True)
         Role.__table__.create(setting.mysql_engine, checkfirst=True)
         Permission.__table__.create(setting.mysql_engine, checkfirst=True)
+        Module.__table__.create(setting.mysql_engine, checkfirst=True)
         user_roles.create(setting.mysql_engine, checkfirst=True)
         role_permissions.create(setting.mysql_engine, checkfirst=True)
+        user_modules.create(setting.mysql_engine, checkfirst=True)
 
         User.add("a@mail.com", "a", 1)
         user = session.query(User).filter(User.user_name == "a@mail.com").one_or_none()
 
         init_permissions(user)
         init_roles(user)
+        init_applications(user)
 
     except OperationalError as e:
         logger.error(e)

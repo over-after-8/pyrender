@@ -14,7 +14,7 @@ class Permission(Base):
     def __repr__(self):
         return f"{self.name}"
 
-    def to_dict(self):
+    def to_dict(self, session=None):
         return {
             "id": self.id,
             "name": self.name
