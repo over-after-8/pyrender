@@ -148,25 +148,45 @@ def owned_by(model_class, item_id, session=None):
 
 def check_permission(permission):
     def check_func(func):
-        @wraps(func)
-        def wrap_func(self_object, item_id, *arg, **kwarg):
-            view_model_name = self_object.__class__.__name__
-            required_permission = f"{view_model_name.lower()}.{permission}"
-            permissions = permissions_by_user(current_user.id)
-            all_permission = list(
-                filter(lambda x: required_permission in x.name and x.name.endswith(".all"), permissions))
-            if all_permission:
-                return func(self_object, item_id, *arg, **kwarg)
 
-            existed_permission = list(filter(lambda x: required_permission in x.name, permissions))
-            if existed_permission:
-                if owned_by(self_object.model_class, item_id):
-                    return func(self_object, item_id, *arg, **kwarg)
-                else:
-                    return abort(403)
-            return abort(403)
+        if "item_id" in func.__code__.co_varnames:
+            @wraps(func)
+            def wrap_func(self_object, item_id, *args, **kwargs):
+                view_model_name = self_object.__class__.__name__
+                required_permission = f"{view_model_name.lower()}.{permission}"
+                permissions = permissions_by_user(current_user.id)
+                all_permission = list(
+                    filter(lambda x: required_permission in x.name and x.name.endswith(".all"), permissions))
+                if all_permission:
+                    return func(self_object, item_id, *args, **kwargs)
 
-        return wrap_func
+                existed_permission = list(filter(lambda x: required_permission in x.name, permissions))
+                if existed_permission:
+                    if owned_by(self_object.model_class, item_id):
+                        return func(self_object, item_id, *args, **kwargs)
+                    else:
+                        return abort(403)
+                return abort(403)
+
+            return wrap_func
+        else:
+            @wraps(func)
+            def wrap(self_object, *args, **kwargs):
+                view_model_name = self_object.__class__.__name__
+                required_permission = f"{view_model_name.lower()}.{permission}"
+                permissions = permissions_by_user(current_user.id)
+
+                all_permission = list(
+                    filter(lambda x: required_permission in x.name and x.name.endswith(".all"), permissions))
+                if all_permission:
+                    return func(self_object, None, *args, **kwargs)
+
+                existed_permission = list(filter(lambda x: required_permission in x.name, permissions))
+                if existed_permission:
+                    return func(self_object, current_user.id, *args, **kwargs)
+                return abort(403)
+
+            return wrap
 
     return check_func
 
@@ -306,7 +326,8 @@ class ViewModel:
 
     @login_required
     @provide_session
-    def list_items(self, session=None):
+    @check_permission("list")
+    def list_items(self, created_by, session=None):
         keyword = request.args.get("keyword", None)
         page = max(int(request.args.get("page", 1)), 1)
         page_size = int(request.args.get("page_size", 20))
@@ -317,10 +338,8 @@ class ViewModel:
                                         [getattr(self.model_class, field).like(f"%{keyword}%") for field in
                                          self.search_fields]))
 
-        if "owner_id" in dir(self.model_class):
-            query = query.filter(
-                or_(self.model_class.owner_id == current_user.id, self.model_class.permission.op('&')(0b100))
-            )
+        if created_by:
+            query = query.filter(self.model_class.created_by == created_by)
 
         query = query.order_by(self.model_class.id.desc())
         total = query.count()
