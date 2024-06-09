@@ -2,23 +2,12 @@ from functools import reduce
 
 from flask_login import LoginManager
 
-from render.models.module import Module
+from render.builder.utils import get_class
 from render.models.user import User
 from render.utils.db import provide_session
 from render.www import auth
 from render.www.admin import admin_application
 from render.www.utils import path_for
-
-
-def get_class(class_name):
-    from importlib import import_module
-
-    try:
-        module_path, class_name = class_name.rsplit('.', 1)
-        module = import_module(module_path)
-        return getattr(module, class_name)
-    except (ImportError, AttributeError) as e:
-        raise ImportError(class_name)
 
 
 def create_app(app, applications):

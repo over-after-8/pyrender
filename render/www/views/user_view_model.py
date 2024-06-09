@@ -4,7 +4,7 @@ from flask import request, url_for, render_template, redirect
 from flask_login import login_required, current_user
 
 from render.builder.utils import outside_url_for
-from render.builder.viewmodel import ViewModel
+from render.builder.viewmodel import ViewModel, check_permission
 from render.models.user import User
 
 
@@ -27,6 +27,7 @@ class UserViewModel(ViewModel):
         super().register(flask_app_or_bp)
 
     @login_required
+    @check_permission("edit")
     def user_change_password(self, item_id):
         if request.method == "GET":
             user_item = User.get(item_id)
