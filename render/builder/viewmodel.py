@@ -3,11 +3,9 @@ from functools import reduce, wraps
 
 from flask import Blueprint, render_template, request, redirect, abort
 from flask_login import login_required, current_user
-from sqlalchemy import inspect, or_, and_
+from sqlalchemy import and_
 
-from render.builder.utils import outside_url_for
-from render.models.permission import Permission
-from render.models.user import User
+from render.builder.utils import outside_url_for, is_relationship, relationship_class
 from render.utils.db import provide_session
 
 
@@ -21,9 +19,9 @@ class SubViewModel:
 
 
 class Field:
-    def __init__(self, name, type):
+    def __init__(self, name, _type):
         self.name = name
-        self.type = type
+        self.type = _type
 
     def to_dict(self):
         return {
@@ -117,20 +115,6 @@ class DetailViewModel(SubViewModel):
             "field_types": field_types,
             "item": self.map_item()
         }
-
-
-def is_relationship(model_class, field):
-    for rel in inspect(model_class).relationships:
-        if rel.key == field:
-            return True
-    return False
-
-
-def relationship_class(model_class, field):
-    for rel in inspect(model_class).relationships:
-        if rel.key == field:
-            return rel.mapper.class_
-    return None
 
 
 @provide_session
@@ -295,8 +279,24 @@ class ViewModel:
     bp: Blueprint = None
     list_view_model: ListViewModel = None
 
-    def __init__(self, model_class, add_view_model=AddViewModel, edit_view_model=EditViewModel,
-                 list_view_model=ListViewModel, delete_view_model=DeleteViewModel, detail_view_model=DetailViewModel):
+    list_template = ""
+    detail_template = ""
+    edit_template = ""
+    delete_template = ""
+    add_template = ""
+
+    def __init__(self,
+                 model_class,
+                 add_view_model=AddViewModel,
+                 edit_view_model=EditViewModel,
+                 list_view_model=ListViewModel,
+                 delete_view_model=DeleteViewModel,
+                 detail_view_model=DetailViewModel,
+                 list_template="render/list_view.html",
+                 detail_template="render/detail_view.html",
+                 edit_template="render/edit_view.html",
+                 delete_template="render/delete_view.html",
+                 add_template="render/add_view.html"):
         self.model_class = model_class
         self.__class__.bp = Blueprint(self.__class__.__name__, __name__,
                                       url_prefix=f'/{self.__class__.__name__}',
@@ -315,6 +315,12 @@ class ViewModel:
         self.edit_view_model = edit_view_model(self)
         self.detail_view_model = detail_view_model(self)
         self.delete_view_model = delete_view_model(self)
+
+        self.list_template = list_template
+        self.detail_template = detail_template
+        self.edit_template = edit_template
+        self.delete_template = delete_template
+        self.add_template = add_template
 
     def register(self, flask_app_or_bp):
         self.bp.route("/list", methods=["GET"])(self.list_items)
@@ -352,7 +358,7 @@ class ViewModel:
         res.page = page
         res.page_size = page_size
         res.total = total
-        return render_template("render/list_view.html", title=f"List {self.model_class.__name__}",
+        return render_template(self.list_template, title=f"List {self.model_class.__name__}",
                                model=json.dumps(res.to_dict(), default=str)), 200
 
     @login_required
@@ -360,7 +366,7 @@ class ViewModel:
     def add_item(self, session=None):
         if request.method == "GET":
             model = self.add_view_model
-            return render_template("render/add_view.html", title=f"Add {self.model_class.__name__}",
+            return render_template(self.add_template, title=f"Add {self.model_class.__name__}",
                                    model=json.dumps(model.to_dict(), default=str)), 200
         else:
             kwargs = {}
@@ -382,7 +388,7 @@ class ViewModel:
         res = self.detail_view_model
         res.item = item
 
-        return render_template("render/detail_view.html", title=f"Detail {self.model_class.__name__}",
+        return render_template(self.detail_template, title=f"Detail {self.model_class.__name__}",
                                model=json.dumps(res.to_dict(), default=str)), 200
 
     @login_required
@@ -396,7 +402,7 @@ class ViewModel:
             model.disabled_edit_fields = self.disabled_edit_fields
             model.item = item
             model_json = json.dumps(model.to_dict(session), default=str)
-            return render_template("render/edit_view.html", title=f"Edit {self.model_class.__name__}",
+            return render_template(self.edit_template, title=f"Edit {self.model_class.__name__}",
                                    model=model_json), 200
         else:
             item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
@@ -425,7 +431,7 @@ class ViewModel:
             item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
             if not item:
                 return abort(404)
-            return render_template("render/delete_view.html", title=f"Delete {self.model_class.__name__}")
+            return render_template(self.delete_template, title=f"Delete {self.model_class.__name__}")
         else:
             session.delete(item)
             return redirect(self.list_view_model.search_url_func()), 302
