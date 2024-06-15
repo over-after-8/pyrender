@@ -7,10 +7,12 @@ from render.models.module import Module
 from render.models.permission import Permission
 from render.models.role import Role
 from render.models.user import User
-from render.www.views.module_view_model import ModuleViewModel
-from render.www.views.permission_view_model import PermissionViewModel
-from render.www.views.role_view_model import RoleViewModel
-from render.www.views.user_view_model import UserViewModel
+from render.models.user_profile import UserProfile
+from render.www.views.module_view_model import ModuleVM
+from render.www.views.permission_view_model import PermissionVM
+from render.www.views.role_view_model import RoleVM
+from render.www.views.user_profile_view_model import UserProfileVM
+from render.www.views.user_view_model import UserVM
 
 
 class Admin(Application):
@@ -21,22 +23,25 @@ class Admin(Application):
         return bp
 
     def init_menu(self):
-        self.menu.add_item(MenuItem(name="User", controller="UserViewModel.list_items", category="Securities"))
-        self.menu.add_item(MenuItem(name="Role", controller="RoleViewModel.list_items", category="Securities"))
+        self.menu.add_item(MenuItem(name="User", controller="UserVM.list_items", category="Securities"))
+        self.menu.add_item(MenuItem(name="Role", controller="RoleVM.list_items", category="Securities"))
         self.menu.add_item(
-            MenuItem(name="Permission", controller="PermissionViewModel.list_items", category="Securities"))
+            MenuItem(name="Permission", controller="PermissionVM.list_items", category="Securities"))
 
-        self.menu.add_item(MenuItem(name="Modules", controller="ModuleViewModel.list_items", category="Modules"))
+        self.menu.add_item(
+            MenuItem(name="User Profiles", controller="UserProfileVM.list_items", category="User Profiles"))
+        self.menu.add_item(MenuItem(name="Modules", controller="ModuleVM.list_items", category="Modules"))
 
     def __init__(self, name):
         super().__init__(name)
         self.name = name
 
     def init_view_model(self):
-        UserViewModel(User).register(self.bp)
-        RoleViewModel(Role).register(self.bp)
-        PermissionViewModel(Permission).register(self.bp)
-        ModuleViewModel(Module).register(self.bp)
+        UserVM(User).register(self.bp)
+        RoleVM(Role).register(self.bp)
+        PermissionVM(Permission).register(self.bp)
+        ModuleVM(Module).register(self.bp)
+        UserProfileVM(UserProfile).register(self.bp)
 
     def routes(self):
         self.bp.route("/")(self.index)

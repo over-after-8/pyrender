@@ -1,22 +1,50 @@
 import {createRoot} from "react-dom/client";
-import React from "react";
+import React, {useState} from "react";
 import Select from 'react-select'
 import {CSRFToken} from "./components/utils";
+import "react-datetime/css/react-datetime.css";
+import Datetime from "react-datetime";
 
 
-function EditFormHelper({name, type, value, setValue, relationships}) {
+function date2timestamp(dateStr) {
+    if (dateStr !== null) {
+        const split = dateStr.split("-")
+        const date = new Date(split[0], split[1] - 1, split[2])
+        return date.getTime()
+    }
+    return ""
 
+}
+
+function EditFormHelper({name, type, initValue, relationships}) {
     switch (type) {
-        case "Boolean":
+        case "Date": {
+            const [value, setValue] = useState(date2timestamp(initValue))
+            return (
+                <div>
+                    <input type={"hidden"} name={name} value={value}/>
+                    <Datetime onChange={setValue} value={value} dateFormat={"YYYY-MM-DD"}
+                              timeFormat={false}/>
+                </div>
+            )
+        }
+
+        case "Boolean": {
+            const [value, setValue] = useState(Boolean(initValue))
             const onCheckBoxChangeHandler = () => {
                 setValue(!value)
             }
             return (
-                <input className="form-check-input ms-5" type="checkbox" name={name} checked={value} value={value && 1 || 0}
+                <input className="form-check-input ms-5" type="checkbox" name={name} checked={value}
+                       value={value && 1 || 0}
                        onChange={() => onCheckBoxChangeHandler()}></input>
 
             )
-        case "Relationship":
+        }
+
+        case "Relationship": {
+            const [value, setValue] = useState(initValue)
+
             const options = relationships[name].map((item) => {
                 return {value: item.id, label: item.name}
             })
@@ -44,11 +72,14 @@ function EditFormHelper({name, type, value, setValue, relationships}) {
                     ></Select>
                 </>
             )
-        default:
+        }
+        default: {
+            const [value, setValue] = useState(String(initValue))
             return (
                 <input className={"form-control"} name={name} type="input" value={value}
                        onChange={(event) => setValue(event.target.value)}></input>
             )
+        }
     }
 }
 
@@ -77,9 +108,8 @@ function DisabledEditFormHelper({type, value}) {
     }
 }
 
-function EditView({
-                      model, csrf_token
-                  }) {
+function EditView({model, csrf_token}) {
+    console.log(model)
     return (
         <>
             <div className={"row"}>
@@ -91,7 +121,7 @@ function EditView({
                                 return (
                                     <div className="mb-3 form-group">
                                         <label><strong>{field}</strong></label>
-                                        <DisabledEditFormHelper type={model.item[field][1]}
+                                        <DisabledEditFormHelper type={model.field_types[field]}
                                                                 value={model.item[field][0]}></DisabledEditFormHelper>
                                     </div>
                                 )
@@ -99,13 +129,12 @@ function EditView({
                         }
                         {
                             model.edit_fields.map((field) => {
-                                const [value, setValue] = React.useState(model.item[field][0])
-
                                 return (
                                     <div className="mb-3 form-group">
                                         <label><strong>{field}</strong></label>
-                                        <EditFormHelper name={field} type={model.item[field][1]} value={value}
-                                                        setValue={setValue}
+                                        <EditFormHelper name={field}
+                                                        type={model.field_types[field]}
+                                                        initValue={model.item[field][0]}
                                                         relationships={model.relationships}/>
                                     </div>
                                 )
