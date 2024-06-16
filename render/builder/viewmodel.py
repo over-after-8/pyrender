@@ -1,4 +1,7 @@
 import json
+import os
+import uuid
+from datetime import datetime
 from functools import reduce, wraps
 
 from flask import Blueprint, render_template, request, redirect, abort
@@ -6,7 +9,36 @@ from flask_login import login_required, current_user
 from sqlalchemy import and_
 
 from render.builder.utils import outside_url_for, is_relationship, relationship_class
+from render.utils.config import config
 from render.utils.db import provide_session
+
+from enum import Enum
+import hashlib
+
+
+class FieldType(Enum):
+    STRING = 'string'
+    INTEGER = 'integer'
+    FLOAT = 'float'
+    BOOLEAN = 'boolean'
+    DATE = 'date'
+    TIMESTAMP = 'timestamp'
+    IMAGE = 'image'
+    FILE_UPLOAD = 'file_upload'
+    RELATIONSHIP = 'relationship'
+    PASSWORD = "password"
+    IMAGE_UPLOAD = 'image_upload'
+
+
+def get_auto_field_types(model_class, fields, overwrite_field_types):
+    res = {}
+    for field in fields:
+        if is_relationship(model_class, field):
+            res[field] = "Relationship"
+        else:
+            res[field] = type(getattr(model_class, field).type).__name__
+    res.update(overwrite_field_types)
+    return res
 
 
 class SubViewModel:
@@ -54,15 +86,20 @@ class EditViewModel(SubViewModel):
     edit_fields = []
     item = None
     model_class = None
+    field_types = {}
 
     def register(self):
         self.model_class = self.view_model_class.model_class
         self.edit_fields = self.view_model_class.edit_fields
         self.disabled_edit_fields = self.view_model_class.disabled_edit_fields
+        self.field_types = self.view_model_class.field_types
 
     def to_dict(self, session=None):
         item = {}
         relationships = {}
+
+        self.field_types = get_auto_field_types(self.model_class, [*self.edit_fields, *self.disabled_edit_fields],
+                                                self.field_types)
 
         for field in [*self.edit_fields, *self.disabled_edit_fields]:
             if is_relationship(self.model_class, field):
@@ -76,7 +113,8 @@ class EditViewModel(SubViewModel):
             "relationships": relationships,
             "disabled_fields": self.disabled_edit_fields,
             "edit_fields": self.edit_fields,
-            "item": item
+            "item": item,
+            "field_types": self.field_types
         }
 
 
@@ -85,11 +123,13 @@ class DetailViewModel(SubViewModel):
     show_fields = []
     item = None
     model_class = None
+    field_types = {}
 
     def register(self):
         self.model_class = self.view_model_class.model_class
         self.show_fields = self.view_model_class.show_fields
         self.actions = self.view_model_class.actions
+        self.field_types = self.view_model_class.field_types
 
     def map_item(self):
         res = {}
@@ -102,17 +142,12 @@ class DetailViewModel(SubViewModel):
         for act in self.actions:
             acts[act] = self.actions[act](item_id=self.item.id)
 
-        field_types = {}
-        for field in self.show_fields:
-            if is_relationship(self.model_class, field):
-                field_types[field] = "Relationship"
-            else:
-                field_types[field] = type(getattr(self.model_class, field).type).__name__
+        self.field_types = get_auto_field_types(self.model_class, self.show_fields, self.field_types)
 
         return {
             "actions": acts,
             "show_fields": self.show_fields,
-            "field_types": field_types,
+            "field_types": self.field_types,
             "item": self.map_item()
         }
 
@@ -214,6 +249,7 @@ class ListViewModel(SubViewModel):
         self.page = self.view_model_class.page
         self.page_size = self.view_model_class.page_size
         self.total = self.view_model_class.total
+        self.field_types = self.view_model_class.field_types
 
     def map_item(self, item):
         item.detail_url = self.detail_url_func(item_id=item.id)
@@ -225,17 +261,11 @@ class ListViewModel(SubViewModel):
         return res
 
     def to_dict(self):
-        field_types = {}
-        for field in self.list_fields:
-            if is_relationship(self.model_class, field):
-                field_types[field] = "Relationship"
-            else:
-                field_types[field] = type(getattr(self.model_class, field).type).__name__
-
+        self.field_types = get_auto_field_types(self.model_class, self.list_fields, self.field_types)
         return {
             "add_url": self.add_url_func(),
             "list_fields": self.list_fields,
-            "field_types": field_types,
+            "field_types": self.field_types,
             "items": list(map(lambda x: self.map_item(x), self.items)),
             "search_url": self.search_url_func(),
             "keyword": self.keyword,
@@ -247,6 +277,36 @@ class ListViewModel(SubViewModel):
 
 class DeleteViewModel(SubViewModel):
     pass
+
+
+ALLOWED_EXTENSIONS = config["upload"]["allowed_extensions"]
+
+
+def secure_filename(file_name):
+    ext = file_name.rsplit(".", 1)[1]
+    name = hashlib.sha256(bytes(f"{file_name.rsplit('.', 1)[0]}.{uuid.uuid4().hex}", "UTF-8")).hexdigest()
+    return f"{name}.{ext}"
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+class UpdateValue:
+    def __init__(self, value):
+        self.value = value
+
+    def is_updated(self):
+        return True
+
+
+class NoUpdate(UpdateValue):
+    def __init__(self):
+        super().__init__(None)
+
+    def is_updated(self):
+        return False
 
 
 class ViewModel:
@@ -284,6 +344,7 @@ class ViewModel:
     edit_template = ""
     delete_template = ""
     add_template = ""
+    field_types = {}
 
     def __init__(self,
                  model_class,
@@ -361,22 +422,25 @@ class ViewModel:
         return render_template(self.list_template, title=f"List {self.model_class.__name__}",
                                model=json.dumps(res.to_dict(), default=str)), 200
 
-    @login_required
+    def add_item_get(self):
+        model = self.add_view_model
+        return render_template(self.add_template, title=f"Add {self.model_class.__name__}",
+                               model=json.dumps(model.to_dict(), default=str)), 200
+
     @provide_session
-    def add_item(self, session=None):
-        if request.method == "GET":
-            model = self.add_view_model
-            return render_template(self.add_template, title=f"Add {self.model_class.__name__}",
-                                   model=json.dumps(model.to_dict(), default=str)), 200
-        else:
-            kwargs = {}
-            for field in self.add_fields:
-                kwargs[field] = request.form.get(field, None)
-                if "created_by" in dir(self.model_class):
-                    kwargs["created_by"] = current_user.id
-            item = self.model_class(**kwargs)
-            session.add(item)
-            return redirect(self.list_view_model.search_url_func()), 302
+    def add_item_post(self, session=None):
+        kwargs = {}
+        for field in self.add_fields:
+            kwargs[field] = request.form.get(field, None)
+            if "created_by" in dir(self.model_class):
+                kwargs["created_by"] = current_user.id
+        item = self.model_class(**kwargs)
+        session.add(item)
+        return redirect(self.list_view_model.search_url_func()), 302
+
+    @login_required
+    def add_item(self):
+        return request.method == "GET" and self.add_item_get() or self.add_item_post()
 
     @login_required
     @provide_session
@@ -406,19 +470,36 @@ class ViewModel:
                                    model=model_json), 200
         else:
             item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
+            field_types = self.edit_view_model.field_types
             for field in self.edit_fields:
                 if field in self.disabled_edit_fields:
                     continue
-
-                if is_relationship(self.model_class, field):
+                if field_types[field].lower() == "relationship":
                     req_value = request.form.getlist(field)
                     rel_class = relationship_class(self.model_class, field)
-                    value = session.query(rel_class).filter(rel_class.id.in_(req_value)).all()
+                    res = UpdateValue(session.query(rel_class).filter(rel_class.id.in_(req_value)).all())
+                elif field_types[field] == "image_upload":
+                    if field in request.files and request.files[field].filename:
+                        upload_file_name = secure_filename(request.files[field].filename)
+                        file = request.files[field]
+                        file.save(os.path.join("/tmp/flask_files", upload_file_name))
+                        res = UpdateValue(upload_file_name)
+                    else:
+                        res = NoUpdate()
+
                 else:
                     value = request.form.get(field, None)
-                    if type(getattr(self.model_class, field).type).__name__ == "Boolean":
-                        value = bool(int(request.form.get(field, False)))
-                setattr(item, field, value)
+                    match field_types[field]:
+                        case "Boolean":
+                            res = UpdateValue(bool(int(request.form.get(field, False))))
+                        case "Date":
+                            res = UpdateValue(datetime.fromtimestamp(int(value) / 1000.0))
+                        case _:
+                            res = NoUpdate()
+
+                if res.is_updated():
+                    setattr(item, field, res.value)
+
             session.add(item)
             return redirect(self.list_view_model.search_url_func()), 302
 

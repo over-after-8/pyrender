@@ -10,6 +10,7 @@ from sqlalchemy.orm import relationship, mapped_column, Mapped
 
 from render.models.module import user_modules, Module
 from render.models.role import Role
+from render.models.user_profile import UserProfile
 from render.utils.base import Base, basic_fields
 from render.utils.db import provide_session
 
@@ -38,7 +39,6 @@ user_roles = Table(
 )
 
 
-@dataclasses.dataclass
 @basic_fields
 class User(Base, UserMixin):
     __tablename__ = "users"

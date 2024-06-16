@@ -7,7 +7,14 @@ from render.models.module import user_modules, Module
 from render.models.permission import Permission
 from render.models.role import Role, role_permissions
 from render.models.user import User
+from render.models.user_profile import UserProfile
 from render.utils.db import provide_session
+
+from render.www.views.role_view_model import RoleVM
+from render.www.views.user_view_model import UserVM
+from render.www.views.permission_view_model import PermissionVM
+from render.www.views.module_view_model import ModuleVM
+from render.www.views.user_profile_view_model import UserProfileVM
 
 logger = logging.getLogger(__name__)
 
@@ -87,11 +94,6 @@ def init_applications(user, session=None):
 
 @provide_session
 def init_roles(user, session=None):
-    from render.www.views.role_view_model import RoleViewModel
-    from render.www.views.user_view_model import UserViewModel
-    from render.www.views.permission_view_model import PermissionViewModel
-    from render.www.views.module_view_model import ModuleViewModel
-
     view_model_classes = list(map(lambda x: x.__name__, inheritors(ViewModel)))
     base_roles = {
         "user",
@@ -128,11 +130,6 @@ def init_roles(user, session=None):
 
 
 def init_permissions(user):
-    from render.www.views.role_view_model import RoleViewModel
-    from render.www.views.user_view_model import UserViewModel
-    from render.www.views.permission_view_model import PermissionViewModel
-    from render.www.views.module_view_model import ModuleViewModel
-
     view_model_classes = map(lambda x: x.__name__, inheritors(ViewModel))
     base_permissions = {
         "edit.all",
@@ -167,12 +164,15 @@ def db_init(arg, session=None):
         Role.__table__.create(setting.mysql_engine, checkfirst=True)
         Permission.__table__.create(setting.mysql_engine, checkfirst=True)
         Module.__table__.create(setting.mysql_engine, checkfirst=True)
+        UserProfile.__table__.create(setting.mysql_engine, checkfirst=True)
         user_roles.create(setting.mysql_engine, checkfirst=True)
         role_permissions.create(setting.mysql_engine, checkfirst=True)
         user_modules.create(setting.mysql_engine, checkfirst=True)
 
         User.add("a@mail.com", "a", 1)
         user = session.query(User).filter(User.user_name == "a@mail.com").one_or_none()
+        profile = UserProfile(name=user.user_name, id=user.id)
+        session.add(profile)
 
         init_permissions(user)
         init_roles(user)

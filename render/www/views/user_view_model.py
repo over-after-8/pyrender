@@ -6,9 +6,11 @@ from flask_login import login_required, current_user
 from render.builder.utils import outside_url_for
 from render.builder.viewmodel import ViewModel, check_permission
 from render.models.user import User
+from render.models.user_profile import UserProfile
+from render.utils.db import provide_session
 
 
-class UserViewModel(ViewModel):
+class UserVM(ViewModel):
     list_fields = ["id", "user_name", "full_name", "roles", "modules", "is_active", "created_at", "updated_at"]
     search_fields = ["user_name", "full_name"]
     add_fields = ["user_name", "full_name", "password", "is_active"]
@@ -44,7 +46,8 @@ class UserViewModel(ViewModel):
             return json.dumps({"status": "success"}), 200
 
     @login_required
-    def user_add(self):
+    @provide_session
+    def user_add(self, session=None):
         if request.method == "GET":
             return render_template("render/admin/user_add.html", title="Add User"), 200
         else:
@@ -53,4 +56,7 @@ class UserViewModel(ViewModel):
             if user_name is None or password is None:
                 return json.dumps({"status": "failed"}), 400
             User.add(user_name, password, current_user.id)
+            user_item = session.query(User).filter(User.user_name == user_name).one_or_none()
+            profile = UserProfile(name=user_item.user_name, id=user_item.id)
+            session.add(profile)
             return redirect(self.list_view_model.search_url_func())
