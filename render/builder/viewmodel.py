@@ -1,4 +1,6 @@
 import json
+import os
+import uuid
 from datetime import datetime
 from functools import reduce, wraps
 
@@ -7,9 +9,11 @@ from flask_login import login_required, current_user
 from sqlalchemy import and_
 
 from render.builder.utils import outside_url_for, is_relationship, relationship_class
+from render.utils.config import config
 from render.utils.db import provide_session
 
 from enum import Enum
+import hashlib
 
 
 class FieldType(Enum):
@@ -23,6 +27,7 @@ class FieldType(Enum):
     FILE_UPLOAD = 'file_upload'
     RELATIONSHIP = 'relationship'
     PASSWORD = "password"
+    IMAGE_UPLOAD = 'image_upload'
 
 
 def get_auto_field_types(model_class, fields, overwrite_field_types):
@@ -274,6 +279,36 @@ class DeleteViewModel(SubViewModel):
     pass
 
 
+ALLOWED_EXTENSIONS = config["upload"]["allowed_extensions"]
+
+
+def secure_filename(file_name):
+    ext = file_name.rsplit(".", 1)[1]
+    name = hashlib.sha256(bytes(f"{file_name.rsplit('.', 1)[0]}.{uuid.uuid4().hex}", "UTF-8")).hexdigest()
+    return f"{name}.{ext}"
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+class UpdateValue:
+    def __init__(self, value):
+        self.value = value
+
+    def is_updated(self):
+        return True
+
+
+class NoUpdate(UpdateValue):
+    def __init__(self):
+        super().__init__(None)
+
+    def is_updated(self):
+        return False
+
+
 class ViewModel:
     model_class = None
 
@@ -439,20 +474,32 @@ class ViewModel:
             for field in self.edit_fields:
                 if field in self.disabled_edit_fields:
                     continue
-
-                if is_relationship(self.model_class, field):
+                if field_types[field].lower() == "relationship":
                     req_value = request.form.getlist(field)
                     rel_class = relationship_class(self.model_class, field)
-                    value = session.query(rel_class).filter(rel_class.id.in_(req_value)).all()
+                    res = UpdateValue(session.query(rel_class).filter(rel_class.id.in_(req_value)).all())
+                elif field_types[field] == "image_upload":
+                    if field in request.files and request.files[field].filename:
+                        upload_file_name = secure_filename(request.files[field].filename)
+                        file = request.files[field]
+                        file.save(os.path.join("/tmp/flask_files", upload_file_name))
+                        res = UpdateValue(upload_file_name)
+                    else:
+                        res = NoUpdate()
+
                 else:
                     value = request.form.get(field, None)
                     match field_types[field]:
                         case "Boolean":
-                            value = bool(int(request.form.get(field, False)))
+                            res = UpdateValue(bool(int(request.form.get(field, False))))
                         case "Date":
-                            value = datetime.fromtimestamp(int(value) / 1000.0)
+                            res = UpdateValue(datetime.fromtimestamp(int(value) / 1000.0))
+                        case _:
+                            res = NoUpdate()
 
-                setattr(item, field, value)
+                if res.is_updated():
+                    setattr(item, field, res.value)
+
             session.add(item)
             return redirect(self.list_view_model.search_url_func()), 302
 

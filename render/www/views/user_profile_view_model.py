@@ -7,3 +7,4 @@ class UserProfileVM(ViewModel):
     add_fields = ["name", "gender", "birth_date", "avatar"]
     show_fields = ["name", "gender", "birth_date", "avatar"]
     edit_fields = ["name", "gender", "birth_date", "avatar"]
+    field_types = {"avatar": "image_upload"}

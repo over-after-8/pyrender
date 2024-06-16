@@ -18,6 +18,14 @@ function date2timestamp(dateStr) {
 
 function EditFormHelper({name, type, initValue, relationships}) {
     switch (type) {
+        case "image_upload": {
+            return (
+                <div>
+                    <label htmlFor={`file_${name}`} className="form-label">Default file input example</label>
+                    <input className="form-control" type="file" id={`file_${name}`} name={name}/>
+                </div>
+            )
+        }
         case "Date": {
             const [value, setValue] = useState(date2timestamp(initValue))
             return (
@@ -83,7 +91,9 @@ function EditFormHelper({name, type, initValue, relationships}) {
     }
 }
 
-function DisabledEditFormHelper({type, value}) {
+function DisabledEditFormHelper({
+                                    type, value
+                                }) {
     switch (type) {
         case "Boolean":
             return (
@@ -108,13 +118,15 @@ function DisabledEditFormHelper({type, value}) {
     }
 }
 
-function EditView({model, csrf_token}) {
+function EditView({
+                      model, csrf_token
+                  }) {
     console.log(model)
     return (
         <>
             <div className={"row"}>
                 <div className={"col-md-6"}>
-                    <form name={"editForm"} className={"smaller-font"} method={"post"}>
+                    <form name={"editForm"} className={"smaller-font"} method={"post"} encType={"multipart/form-data"}>
                         <CSRFToken csrf_token={csrf_token}></CSRFToken>
                         {
                             model.disabled_fields.map((field) => {

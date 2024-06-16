@@ -13,6 +13,8 @@ from render.www.utils import path_for
 def create_app(app, applications):
     app.register_blueprint(auth.bp)
 
+    app.config['UPLOAD_FOLDER'] = "/tmp/flask_files"
+
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
