@@ -1,6 +1,8 @@
 import argparse
 import logging
 
+import celery
+
 from render.builder.utils import inheritors
 from render.builder.viewmodel import ViewModel
 from render.models.module import user_modules, Module
@@ -8,6 +10,7 @@ from render.models.permission import Permission
 from render.models.role import Role, role_permissions
 from render.models.user import User
 from render.models.user_profile import UserProfile
+from render.utils.config import config
 from render.utils.db import provide_session
 
 from render.www.views.role_view_model import RoleVM
@@ -151,6 +154,13 @@ def init_permissions(user):
     add_permissions(permissions)
 
 
+def worker(args):
+    celery_app = celery.Celery(main=config["celery"]["app_name"], broker=config["celery"]["broker_url"],
+                               backend=config["celery"]["backend_url"])
+    wk = celery_app.Worker()
+    wk.start()
+
+
 @provide_session
 def db_init(arg, session=None):
     from render.models.user import User
@@ -190,7 +200,8 @@ class APPFactory(object):
 
     apps = [
         Command(func=version, args=[]),
-        Command(func=db_init, args=[])
+        Command(func=db_init, args=[]),
+        Command(func=worker, args=[])
     ]
 
     @classmethod
@@ -200,7 +211,3 @@ class APPFactory(object):
         for app in APPFactory.apps:
             app.add_to_parser(sub_parsers)
         return parser
-
-
-if __name__ == '__main__':
-    db_init([])
