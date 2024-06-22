@@ -70,14 +70,17 @@ class AddViewModel(SubViewModel):
     def register(self):
         self.model_class = self.view_model_class.model_class
         self.add_fields = self.view_model_class.add_fields
+        self.field_types = self.view_model_class.field_types
 
     def to_dict(self):
         fields = map(
             lambda field_name: Field(field_name, type(getattr(self.model_class, field_name).type).__name__).to_dict(),
             self.add_fields)
 
+        self.field_types = get_auto_field_types(self.model_class, self.add_fields, self.field_types)
         return {
-            "fields": list(fields)
+            "fields": list(fields),
+            "field_types": self.field_types
         }
 
 
@@ -263,7 +266,7 @@ class ListViewModel(SubViewModel):
     def to_dict(self):
         self.field_types = get_auto_field_types(self.model_class, self.list_fields, self.field_types)
         return {
-            "add_url": self.add_url_func(),
+            "add_url": self.add_url_func and self.add_url_func(),
             "list_fields": self.list_fields,
             "field_types": self.field_types,
             "items": list(map(lambda x: self.map_item(x), self.items)),
@@ -313,6 +316,7 @@ class ViewModel:
     model_class = None
 
     disabled_edit_fields = []
+    disabled_view_models = []
     edit_fields = []
 
     actions = {}
@@ -364,12 +368,15 @@ class ViewModel:
                                       template_folder=self.template_folder,
                                       static_folder=self.static_folder)
 
-        self.add_url_func = self.add_url_func or outside_url_for(".add_item")
+        if not self.add_enabled():
+            self.add_url_func = None
+        else:
+            self.add_url_func = self.add_url_func or outside_url_for(".add_item")
 
         self.search_url_func = outside_url_for(".list_items")
-        self.detail_url_func = outside_url_for(".detail_item")
-        self.edit_url_func = outside_url_for(".edit_item")
-        self.delete_url_func = outside_url_for(".delete_item")
+        self.detail_url_func = self.detail_enabled() and outside_url_for(".detail_item")
+        self.edit_url_func = self.edit_enabled() and outside_url_for(".edit_item")
+        self.delete_url_func = self.delete_enabled() and outside_url_for(".delete_item")
 
         self.list_view_model = list_view_model(self)
         self.add_view_model = add_view_model(self)
@@ -383,12 +390,35 @@ class ViewModel:
         self.delete_template = delete_template
         self.add_template = add_template
 
+    def enabled(self, view_model):
+        return view_model not in self.disabled_view_models
+
+    def add_enabled(self):
+        return self.enabled("add")
+
+    def edit_enabled(self):
+        return self.enabled("edit")
+
+    def delete_enabled(self):
+        return self.enabled("delete")
+
+    def list_enabled(self):
+        return self.enabled("list")
+
+    def detail_enabled(self):
+        return self.enabled("detail")
+
     def register(self, flask_app_or_bp):
-        self.bp.route("/list", methods=["GET"])(self.list_items)
-        self.bp.route("/add", methods=["GET", "POST"])(self.add_item)
-        self.bp.route("/<int:item_id>", methods=["GET"])(self.detail_item)
-        self.bp.route("/<int:item_id>/edit", methods=["GET", "POST"])(self.edit_item)
-        self.bp.route("/<int:item_id>/delete", methods=["GET", "POST"])(self.delete_item)
+        if self.list_enabled():
+            self.bp.route("/list", methods=["GET"])(self.list_items)
+        if self.add_enabled():
+            self.bp.route("/add", methods=["GET", "POST"])(self.add_item)
+        if self.detail_enabled():
+            self.bp.route("/<int:item_id>", methods=["GET"])(self.detail_item)
+        if self.edit_enabled():
+            self.bp.route("/<int:item_id>/edit", methods=["GET", "POST"])(self.edit_item)
+        if self.delete_enabled():
+            self.bp.route("/<int:item_id>/delete", methods=["GET", "POST"])(self.delete_item)
         flask_app_or_bp.register_blueprint(self.bp)
 
     @login_required
@@ -434,6 +464,18 @@ class ViewModel:
             kwargs[field] = request.form.get(field, None)
             if "created_by" in dir(self.model_class):
                 kwargs["created_by"] = current_user.id
+            value = request.form.get(field, None)
+            field_types = self.add_view_model.field_types
+            res = NoUpdate()
+            match field_types[field]:
+                case "Boolean":
+                    res = UpdateValue(bool(int(request.form.get(field, False))))
+                case "TIMESTAMP":
+                    res = UpdateValue(datetime.fromtimestamp(int(value)/1000.0))
+                case _:
+                    res = NoUpdate()
+            if res.is_updated():
+                kwargs[field] = res.value
         item = self.model_class(**kwargs)
         session.add(item)
         return redirect(self.list_view_model.search_url_func()), 302
