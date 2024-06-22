@@ -191,7 +191,10 @@ function App({title, model}) {
                                page_size={data.page_size}></SearchBox>
                 </div>
                 <div className={"col-2 text-end"}>
-                    <AddBox add_url={data.add_url}></AddBox>
+                    {
+                        data.add_url != null && <AddBox add_url={data.add_url}></AddBox>
+                    }
+
                 </div>
             </div>
             <div className={"mt-1"}>

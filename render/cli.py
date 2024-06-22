@@ -5,19 +5,24 @@ import celery
 
 from render.builder.utils import inheritors
 from render.builder.viewmodel import ViewModel
+from render.models.job import JobRun
 from render.models.module import user_modules, Module
 from render.models.permission import Permission
 from render.models.role import Role, role_permissions
 from render.models.user import User
 from render.models.user_profile import UserProfile
+from render.models.job import Job
 from render.utils.config import config
 from render.utils.db import provide_session
+from render.worker.celery_worker import CeleryWorker
 
 from render.www.views.role_view_model import RoleVM
 from render.www.views.user_view_model import UserVM
 from render.www.views.permission_view_model import PermissionVM
 from render.www.views.module_view_model import ModuleVM
 from render.www.views.user_profile_view_model import UserProfileVM
+from render.www.views.job_vm import JobVM
+from render.www.views.job_run_vm import JobRunVM
 
 logger = logging.getLogger(__name__)
 
@@ -155,9 +160,8 @@ def init_permissions(user):
 
 
 def worker(args):
-    celery_app = celery.Celery(main=config["celery"]["app_name"], broker=config["celery"]["broker_url"],
-                               backend=config["celery"]["backend_url"])
-    wk = celery_app.Worker()
+    celery_app = CeleryWorker(config).get_celery_app()
+    wk = celery_app.Job(include=["render.worker.tasks"])
     wk.start()
 
 
@@ -175,6 +179,8 @@ def db_init(arg, session=None):
         Permission.__table__.create(setting.mysql_engine, checkfirst=True)
         Module.__table__.create(setting.mysql_engine, checkfirst=True)
         UserProfile.__table__.create(setting.mysql_engine, checkfirst=True)
+        Job.__table__.create(setting.mysql_engine, checkfirst=True)
+        JobRun.__table__.create(setting.mysql_engine, checkfirst=True)
         user_roles.create(setting.mysql_engine, checkfirst=True)
         role_permissions.create(setting.mysql_engine, checkfirst=True)
         user_modules.create(setting.mysql_engine, checkfirst=True)
@@ -211,3 +217,6 @@ class APPFactory(object):
         for app in APPFactory.apps:
             app.add_to_parser(sub_parsers)
         return parser
+
+# if __name__ == '__main__':
+#     worker([])

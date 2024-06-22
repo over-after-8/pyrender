@@ -94,7 +94,7 @@ def do_setup():
         author="ManhDoi",
         install_requires=["importlib_metadata==7.1.0",
                           "celery==5.4.0 ",
-                          "celery[redis]"
+                          "celery[redis]",
                           "mysqlclient==2.2.4",
                           "Flask-SQLAlchemy==3.1.1",
                           "Flask-WTF==1.2.1",

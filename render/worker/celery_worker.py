@@ -2,10 +2,14 @@ from celery import Celery
 
 
 class CeleryWorker:
+    celery = None
+
     def __init__(self, config):
         self.config = config
-        self.celery = Celery(config["celery"]["app_name"], broker=config["celery"]["broker_url"],
-                             backend=config["celery"]["backend_url"])
+        if self.celery is None:
+            self.celery = Celery(broker=config["celery"]["broker_url"],
+                                 backend=config["celery"]["backend_url"],
+                                 include=["render.worker.tasks"])
 
     def get_celery_app(self):
         return self.celery
