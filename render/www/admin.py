@@ -8,11 +8,15 @@ from render.models.permission import Permission
 from render.models.role import Role
 from render.models.user import User
 from render.models.user_profile import UserProfile
+from render.models.job import Job
+from render.models.job import JobRun
+from render.www.views.job_run_vm import JobRunVM
 from render.www.views.module_view_model import ModuleVM
 from render.www.views.permission_view_model import PermissionVM
 from render.www.views.role_view_model import RoleVM
 from render.www.views.user_profile_view_model import UserProfileVM
 from render.www.views.user_view_model import UserVM
+from render.www.views.job_vm import JobVM
 
 
 class Admin(Application):
@@ -31,6 +35,8 @@ class Admin(Application):
         self.menu.add_item(
             MenuItem(name="User Profiles", controller="UserProfileVM.list_items", category="User Profiles"))
         self.menu.add_item(MenuItem(name="Modules", controller="ModuleVM.list_items", category="Modules"))
+        self.menu.add_item(MenuItem(name="Jobs", controller="JobVM.list_items", category="Jobs"))
+        self.menu.add_item(MenuItem(name="Job runs", controller="JobRunVM.list_items", category="Jobs"))
 
     def __init__(self, name):
         super().__init__(name)
@@ -42,6 +48,8 @@ class Admin(Application):
         PermissionVM(Permission).register(self.bp)
         ModuleVM(Module).register(self.bp)
         UserProfileVM(UserProfile).register(self.bp)
+        JobVM(Job).register(self.bp)
+        JobRunVM(JobRun).register(self.bp)
 
     def routes(self):
         self.bp.route("/")(self.index)

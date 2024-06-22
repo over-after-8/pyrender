@@ -1,7 +1,14 @@
 import {createRoot} from "react-dom/client";
-import React from "react";
+import React, {useState} from "react";
 import {CSRFToken} from "./components/utils";
+import Datetime from "react-datetime";
+import "react-datetime/css/react-datetime.css";
 
+
+function nowWithoutTime() {
+    const date = new Date();
+    return date.setHours(0, 0, 0, 0);
+}
 
 function AddFormHelper({name, type}) {
     if (type === "Boolean") {
@@ -9,6 +16,14 @@ function AddFormHelper({name, type}) {
             <div className="form-check">
                 <label>{name}</label>
                 <input type="checkbox" className="form-check-input" id="check" name={name}></input>
+            </div>
+        )
+    } else if (type === "TIMESTAMP") {
+        return (
+            <div className={"form-group"}>
+                <label>{name}</label>
+                <input type={"hidden"} name={name} value={nowWithoutTime()}/>
+                <Datetime dateFormat={"YYYY-MM-DD"} timeFormat={"HH:mm"}/>
             </div>
         )
     } else {
@@ -34,7 +49,6 @@ function AddView({model, csrf_token}) {
                             model.fields.map((field) => {
                                 return (
                                     <div className="mb-3 form-group">
-
                                         <AddFormHelper name={field.name} type={field.type}/>
                                     </div>
                                 )
