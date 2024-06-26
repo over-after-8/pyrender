@@ -15,6 +15,7 @@ from render.models.job import Job
 from render.utils.config import config
 from render.utils.db import provide_session
 from render.worker.celery_worker import CeleryWorker
+from render.main import start, main_app
 
 from render.www.views.role_view_model import RoleVM
 from render.www.views.user_view_model import UserVM
@@ -161,8 +162,17 @@ def init_permissions(user):
 
 def worker(args):
     celery_app = CeleryWorker(config).get_celery_app()
-    wk = celery_app.Job(include=["render.worker.tasks"])
+    wk = celery_app.Worker()
     wk.start()
+
+
+def webserver(args):
+    start(main_app)
+
+
+def scheduler(args):
+    from render.worker.scheduler import schedule
+    schedule()
 
 
 @provide_session
@@ -207,7 +217,9 @@ class APPFactory(object):
     apps = [
         Command(func=version, args=[]),
         Command(func=db_init, args=[]),
-        Command(func=worker, args=[])
+        Command(func=scheduler, args=[]),
+        Command(func=worker, args=[]),
+        Command(func=webserver, args=[])
     ]
 
     @classmethod

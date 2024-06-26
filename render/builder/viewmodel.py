@@ -256,8 +256,8 @@ class ListViewModel(SubViewModel):
 
     def map_item(self, item):
         item.detail_url = self.detail_url_func(item_id=item.id)
-        item.edit_url = self.edit_url_func(item_id=item.id)
-        item.delete_url = self.delete_url_func(item_id=item.id)
+        item.edit_url = self.edit_url_func and self.edit_url_func(item_id=item.id) or None
+        item.delete_url = self.delete_url_func and self.delete_url_func(item_id=item.id) or None
         res = {}
         for field in [*self.list_fields, "detail_url", "edit_url", "delete_url"]:
             res[field] = getattr(item, field)
@@ -471,7 +471,7 @@ class ViewModel:
                 case "Boolean":
                     res = UpdateValue(bool(int(request.form.get(field, False))))
                 case "TIMESTAMP":
-                    res = UpdateValue(datetime.fromtimestamp(int(value)/1000.0))
+                    res = UpdateValue(datetime.fromtimestamp(int(value) / 1000.0))
                 case _:
                     res = NoUpdate()
             if res.is_updated():

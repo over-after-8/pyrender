@@ -12,7 +12,7 @@ function ListViewHelper({value, type, row_id}) {
         case "Relationship":
             if (typeof value === "string") {
                 return (
-                    <span>{value}</span>
+                    <span className={"badge text-bg-secondary me-1"}>{value}</span>
                 )
             } else {
                 return (

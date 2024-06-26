@@ -2,6 +2,8 @@ from typing import List
 
 from sqlalchemy import Column, BigInteger, String, TIMESTAMP, ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped, relationship
+
+from render.models.user import User
 from render.utils.base import Base, basic_fields
 
 
@@ -18,7 +20,7 @@ class Job(Base):
     job_runs: Mapped[List["JobRun"]] = relationship(back_populates="job")
 
     def __repr__(self):
-        return '<Job(id={self.id}, name={self.name})>'.format(self=self)
+        return 'Job(id={self.id}, name={self.name})'.format(self=self)
 
     def to_dict(self):
         return {
@@ -38,17 +40,17 @@ class JobRun(Base):
     id = mapped_column(BigInteger, primary_key=True, nullable=False)
     job_id = Column(BigInteger, ForeignKey('jobs.id'), nullable=False)
     status = Column(String(15), nullable=False)
-    run = Column(String(63), nullable=False)
+    run_timestamp = Column(TIMESTAMP, nullable=False)
     job: Mapped["Job"] = relationship(back_populates="job_runs")
 
     def __repr__(self):
-        return '<JonRun(job_id={}, run={})>'.format(self.job_id, self.run)
+        return '<JonRun(job_id={}, run={})>'.format(self.job_id, self.run_timestamp)
 
     def to_dict(self):
         return {
             'id': self.id,
             'job_id': self.job_id,
             'status': self.status,
-            'run': self.run,
+            'run_timestamp': self.run_timestamp,
             "job": self.job.to_dict()
         }

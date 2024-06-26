@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, QueuePool
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 from render.utils.config import config
@@ -12,7 +12,12 @@ def configure_validation_session():
     global mysql_session
     global mysql_config
     global mysql_engine
-    mysql_engine = create_engine(mysql_config["sql_alchemy_conn"], echo=False)
+    mysql_engine = create_engine(
+        mysql_config["sql_alchemy_conn"],
+        poolclass=QueuePool,
+        pool_size=5,
+        pool_recycle=300,
+        echo=False)
 
     mysql_session = scoped_session(
         sessionmaker(

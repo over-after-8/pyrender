@@ -19,11 +19,12 @@ function AddFormHelper({name, type}) {
             </div>
         )
     } else if (type === "TIMESTAMP") {
+        const [value, setValue] = useState(nowWithoutTime())
         return (
             <div className={"form-group"}>
                 <label>{name}</label>
-                <input type={"hidden"} name={name} value={nowWithoutTime()}/>
-                <Datetime dateFormat={"YYYY-MM-DD"} timeFormat={"HH:mm"}/>
+                <input type={"hidden"} name={name} value={value}/>
+                <Datetime dateFormat={"YYYY-MM-DD"} timeFormat={"HH:mm"} onChange={setValue}/>
             </div>
         )
     } else {
