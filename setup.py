@@ -98,6 +98,7 @@ def do_setup():
                           "mysqlclient==2.2.4",
                           "Flask-SQLAlchemy==3.1.1",
                           "Flask-WTF==1.2.1",
+                          "croniter==2.0.5",
                           "Flask-Login==0.6.3"],
         cmdclass={
             'clean': CleanCommand,

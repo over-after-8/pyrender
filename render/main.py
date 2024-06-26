@@ -13,7 +13,7 @@ def index():
     return render_template("render/index.html")
 
 
-if __name__ == '__main__':
+def start(main_app):
     WTF_CSRF_SECRET_KEY = 'secret_key'
 
     main_app = create_app(main_app, [])
@@ -23,4 +23,8 @@ if __name__ == '__main__':
     csrf = CSRFProtect()
     csrf.init_app(main_app)
 
-    main_app.run(debug=True)
+    main_app.run(port=5000, debug=True, host='0.0.0.0')
+
+
+if __name__ == '__main__':
+    start(main_app)
