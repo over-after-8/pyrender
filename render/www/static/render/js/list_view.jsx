@@ -26,6 +26,8 @@ function ListViewHelper({value, type, row_id}) {
                     </>
                 )
             }
+        case "JobRunStatus":
+            return <span className="badge text-bg-secondary me-2">{value}</span>
         default:
             return (
                 <span>{value}</span>
@@ -81,12 +83,17 @@ function ActionColumn({item}) {
                    style={{height: "25px", padding: "2px", width: "25px"}}>
                 <span><i
                     className="bi bi-search"></i></span></a>
-                <a className={"btn btn-sm btn-outline-secondary"} href={item.edit_url}
-                   style={{height: "25px", padding: "2px", width: "25px"}}><span><i
-                    className="bi bi-pencil"></i></span></a>
-                <a className={"btn btn-sm btn-outline-secondary"} href={item.delete_url}
-                   style={{height: "25px", padding: "2px", width: "25px"}}><span><i
-                    className="bi bi-trash"></i></span></a>
+                {
+                    item.edit_url && <a className={"btn btn-sm btn-outline-secondary"} href={item.edit_url}
+                                        style={{height: "25px", padding: "2px", width: "25px"}}><span><i
+                        className="bi bi-pencil"></i></span></a>
+                }
+                {
+                    item.delete_url && <a className={"btn btn-sm btn-outline-secondary"} href={item.delete_url}
+                                          style={{height: "25px", padding: "2px", width: "25px"}}><span><i
+                        className="bi bi-trash"></i></span></a>
+                }
+
             </div>
         </>
     )
