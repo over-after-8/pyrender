@@ -33,7 +33,7 @@ services:
 #    command:
 #      - render
 #      - webserver
-#
+
 #  scheduler:
 #    image: pyrender:0.0.1
 #    container_name: scheduler

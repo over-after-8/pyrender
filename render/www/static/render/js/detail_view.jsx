@@ -49,6 +49,8 @@ function ShowViewHelper({value, type}) {
                     </>
                 )
             }
+        case "JobRunStatus":
+            return <span className="badge text-bg-secondary me-2">{value}</span>
         default:
             return (
                 <>{value}</>
@@ -57,6 +59,8 @@ function ShowViewHelper({value, type}) {
 }
 
 function ShowView({model}) {
+
+    console.log(model)
 
     return (
         <>

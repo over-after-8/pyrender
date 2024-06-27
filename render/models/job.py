@@ -3,7 +3,6 @@ from typing import List
 from sqlalchemy import Column, BigInteger, String, TIMESTAMP, ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
-from render.models.user import User
 from render.utils.base import Base, basic_fields
 
 
