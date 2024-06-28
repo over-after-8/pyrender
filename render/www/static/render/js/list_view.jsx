@@ -100,11 +100,30 @@ function ActionColumn({item}) {
 }
 
 function DataListView({listFields, fieldTypes, items}) {
+
+    const selectValues = new Map()
+    const setSelectValues = new Map()
+
+    items.forEach((x, index) => {
+        const [selectValue, setSelectValue] = useState(false)
+
+        selectValues[index] = selectValue
+        setSelectValues[index] = setSelectValue
+    })
+
+    const selectAllOnChange = () => {
+        console.log(selectValues)
+    }
+
     return (
         <>
             <table className="table table-bordered table-hover table-sm">
                 <thead>
                 <tr>
+                    <th scope={"col"}>
+                        <input type={"checkbox"} className={"form-check-input"}
+                               onChange={() => selectAllOnChange()}></input>
+                    </th>
                     <th scope="col">#</th>
                     {listFields.map(x => {
                         return <th key={`col_${x}`} scope="col">{x}</th>
@@ -112,9 +131,13 @@ function DataListView({listFields, fieldTypes, items}) {
                 </tr>
                 </thead>
                 <tbody>
-
                 {items.map((x, index) => {
                     return <tr key={`tb_row_${index}`}>
+                        <td scope={"col"} key={`cb_${index}`}>
+                            <input className={"form-check-input"} type={"checkbox"} checked={selectValues[index]}
+                                   value={selectValues[index] && 1 || 0}
+                                   onChange={() => setSelectValues[index](!selectValues[index])}></input>
+                        </td>
                         <td key={`tb_act_${index}`} scope={"row"}>
                             <ActionColumn item={x}></ActionColumn>
                         </td>
@@ -186,6 +209,26 @@ function Pagination({search_url, page, page_size, total, keyword}) {
 }
 
 
+function ActionMultiSelect() {
+    return (
+        <>
+            <div className="dropdown">
+                <button className="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    Actions
+                </button>
+                <ul className="dropdown-menu">
+                    <li><a className="dropdown-item" href={"#"}>Delete</a></li>
+                    <li><a className="dropdown-item" href={"#"}>Active</a></li>
+                    <li><a className="dropdown-item" href={"#"}>Deactive</a></li>
+
+                </ul>
+            </div>
+        </>
+    )
+}
+
+
 function App({title, model}) {
     const data = JSON.parse(model)
     console.log(data)
@@ -205,10 +248,35 @@ function App({title, model}) {
                 </div>
             </div>
             <div className={"mt-1"}>
-                <DataListView listFields={data["list_fields"]} fieldTypes={data["field_types"]}
-                              items={data["items"]}></DataListView>
-                <Pagination search_url={data.search_url} page={data.page} page_size={data.page_size}
-                            keyword={data.keyword} total={data.total}></Pagination>
+                <div className={"row"}>
+                    <div className={"col col-md-6"}>
+                        <div className={"float-start"}>
+                            <ActionMultiSelect></ActionMultiSelect>
+                        </div>
+                    </div>
+                    <div className={"col col-md-6"}>
+                        <div className={"float-end"}>
+                            <Pagination search_url={data.search_url} page={data.page} page_size={data.page_size}
+                                        keyword={data.keyword} total={data.total}></Pagination>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <DataListView listFields={data["list_fields"]} fieldTypes={data["field_types"]}
+                                  items={data["items"]}></DataListView>
+                </div>
+                <div className={"row"}>
+                    <div className={"col col-md-6"}></div>
+                    <div className={"col col-md-6"}>
+                        <div className={"float-end"}>
+                            <Pagination search_url={data.search_url} page={data.page} page_size={data.page_size}
+                                        keyword={data.keyword} total={data.total}></Pagination>
+                        </div>
+                    </div>
+                </div>
+
+
             </div>
         </>
     )
