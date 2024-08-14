@@ -13,4 +13,3 @@ COPY . ./
 RUN python setup.py compile_assert install clean
 
 CMD []
-

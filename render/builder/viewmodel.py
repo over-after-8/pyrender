@@ -237,6 +237,8 @@ class ListViewModel(SubViewModel):
     page_size = 20
     total = 0
 
+    multi_select_actions = {}
+
     model_class = None
 
     def register(self):
@@ -253,6 +255,7 @@ class ListViewModel(SubViewModel):
         self.page_size = self.view_model_class.page_size
         self.total = self.view_model_class.total
         self.field_types = self.view_model_class.field_types
+        self.multi_select_actions = self.view_model_class.multi_select_actions
 
     def map_item(self, item):
         item.detail_url = self.detail_url_func(item_id=item.id)
@@ -264,6 +267,11 @@ class ListViewModel(SubViewModel):
         return res
 
     def to_dict(self):
+
+        acts = {}
+        for act in self.multi_select_actions:
+            acts[act] = self.multi_select_actions[act]()
+
         self.field_types = get_auto_field_types(self.model_class, self.list_fields, self.field_types)
         return {
             "add_url": self.add_url_func and self.add_url_func(),
@@ -274,7 +282,8 @@ class ListViewModel(SubViewModel):
             "keyword": self.keyword,
             "page": self.page,
             "page_size": self.page_size,
-            "total": self.total
+            "total": self.total,
+            "multi_select_actions": acts
         }
 
 
@@ -349,6 +358,8 @@ class ViewModel:
     delete_template = ""
     add_template = ""
     field_types = {}
+
+    multi_select_actions = {}
 
     def __init__(self,
                  model_class,
