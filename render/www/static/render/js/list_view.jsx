@@ -1,5 +1,8 @@
 import {createRoot} from "react-dom/client";
-import React, {useState} from "react";
+import React, {createContext, useContext, useState} from "react";
+
+
+const MultiSelectContext = createContext()
 
 
 function ListViewHelper({value, type, row_id}) {
@@ -105,8 +108,10 @@ function ActionColumn({item}) {
   )
 }
 
+
 function DataListView({listFields, fieldTypes, items, isMultiSelect}) {
 
+  const {selectedItems, setSelectedItems} = useContext(MultiSelectContext)
 
   const selectValues = new Map()
   const setSelectValues = new Map()
@@ -128,6 +133,10 @@ function DataListView({listFields, fieldTypes, items, isMultiSelect}) {
     items.forEach((x, index) => {
       setSelectValues[index](isSelect)
     })
+
+    if (isSelect) {
+      setSelectedItems(items)
+    }
   }
 
   const selectItem = (index) => {
@@ -135,6 +144,11 @@ function DataListView({listFields, fieldTypes, items, isMultiSelect}) {
     items.forEach((x, idx) => {
       if (idx === index) {
         all = all && !selectValues[idx]
+        if (!selectedItems[idx]) {
+          setSelectedItems(selectedItems.concat(x))
+        } else {
+          setSelectedItems(selectedItems.filter(item => item.id !== x.id))
+        }
       } else {
         all = all && selectValues[idx]
       }
@@ -142,7 +156,7 @@ function DataListView({listFields, fieldTypes, items, isMultiSelect}) {
     })
     setSelectAll(all)
     setSelectValues[index](!selectValues[index])
-    console.log(selectValues)
+
   }
 
   return (
@@ -245,6 +259,17 @@ function Pagination({search_url, page, page_size, total, keyword}) {
 
 
 function ActionMultiSelect({actions}) {
+
+  const {selectedItems, setSelectedItems} = useContext(MultiSelectContext)
+
+  const actionOnClick = (actionUrl) => {
+    if (selectedItems !== undefined) {
+      const url = `${actionUrl}?${selectedItems.map(x => `item_id=${x.id}`).join("&")}`
+      console.log(url)
+      window.location.href = url
+    }
+  }
+
   return (
     <>
       <div className="dropdown">
@@ -255,7 +280,8 @@ function ActionMultiSelect({actions}) {
         <ul className="dropdown-menu">
           {
             Object.keys(actions).map((x, index) => {
-              return <li key={`action_${index}`}><a className="dropdown-item" href={actions[x]}>{x}</a></li>
+              return <li key={`action_${index}`}><a className="dropdown-item" href={"#"}
+                                                    onClick={() => actionOnClick(actions[x])}>{x}</a></li>
             })
           }
         </ul>
@@ -266,6 +292,7 @@ function ActionMultiSelect({actions}) {
 
 
 function App({title, model}) {
+  const [selectedItems, setSelectedItems] = useState([])
   const data = JSON.parse(model)
   const isMultiSelect = Object.keys(data["multi_select_actions"]).length > 0
   return (
@@ -280,42 +307,43 @@ function App({title, model}) {
           {
             data.add_url != null && <AddBox add_url={data.add_url}></AddBox>
           }
-
         </div>
       </div>
+
       <div className={"mt-1"}>
-        <div className={"row"}>
-          <div className={"col col-md-6"}>
-            {
-              isMultiSelect && <div className={"float-start"}>
-                <ActionMultiSelect actions={data["multi_select_actions"]}></ActionMultiSelect>
+        <MultiSelectContext.Provider value={{selectedItems, setSelectedItems}}>
+          <div className={"row"}>
+            <div className={"col col-md-6"}>
+              {
+                isMultiSelect && <div className={"float-start"}>
+                  <ActionMultiSelect actions={data["multi_select_actions"]}></ActionMultiSelect>
+                </div>
+              }
+
+            </div>
+            <div className={"col col-md-6"}>
+              <div className={"float-end"}>
+                <Pagination search_url={data.search_url} page={data.page} page_size={data.page_size}
+                            keyword={data.keyword} total={data.total}></Pagination>
               </div>
-            }
-
-          </div>
-          <div className={"col col-md-6"}>
-            <div className={"float-end"}>
-              <Pagination search_url={data.search_url} page={data.page} page_size={data.page_size}
-                          keyword={data.keyword} total={data.total}></Pagination>
             </div>
           </div>
-        </div>
 
-        <div>
-          <DataListView listFields={data["list_fields"]} fieldTypes={data["field_types"]}
-                        items={data["items"]}
-                        isMultiSelect={isMultiSelect}></DataListView>
-        </div>
-        <div className={"row"}>
-          <div className={"col col-md-6"}></div>
-          <div className={"col col-md-6"}>
-            <div className={"float-end"}>
-              <Pagination search_url={data.search_url} page={data.page} page_size={data.page_size}
-                          keyword={data.keyword} total={data.total}></Pagination>
+          <div>
+            <DataListView listFields={data["list_fields"]} fieldTypes={data["field_types"]}
+                          items={data["items"]}
+                          isMultiSelect={isMultiSelect}></DataListView>
+          </div>
+          <div className={"row"}>
+            <div className={"col col-md-6"}></div>
+            <div className={"col col-md-6"}>
+              <div className={"float-end"}>
+                <Pagination search_url={data.search_url} page={data.page} page_size={data.page_size}
+                            keyword={data.keyword} total={data.total}></Pagination>
+              </div>
             </div>
           </div>
-        </div>
-
+        </MultiSelectContext.Provider>
 
       </div>
     </>
