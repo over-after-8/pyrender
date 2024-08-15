@@ -93,7 +93,7 @@ def do_setup():
         license="MIT",
         author="ManhDoi",
         install_requires=["importlib_metadata==7.1.0",
-                          "celery==5.4.0 ",
+                          "celery",
                           "celery[redis]",
                           "mysqlclient==2.2.4",
                           "Flask-SQLAlchemy==3.1.1",
