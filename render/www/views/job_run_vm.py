@@ -1,12 +1,12 @@
 import json
 
-from flask import request, render_template, session, redirect
+from flask import request, render_template, redirect
 from flask_login import login_required
-from render.models.job import JobRun
 
 from render.builder.utils import outside_url_for
-from render.builder.viewmodel import ViewModel, check_permission
-from render.utils.db import provide_session, create_session
+from render.builder.viewmodel import ViewModel
+from render.models.job import JobRun
+from render.utils.db import create_session
 
 
 class JobRunVM(ViewModel):
