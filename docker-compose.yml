@@ -17,45 +17,45 @@ services:
     ports:
       - "6379:6379"
 
-#  webserver:
-#    image: pyrender:0.0.1
-#    container_name: webserver
-#    restart: always
-#    ports:
-#      - "5000:5000"
-#    depends_on:
-#      - mysql
-#      - redis
-#    env_file:
-#      - .env
-#    volumes:
-#      - .:/opt/app
-#    command:
-#      - render
-#      - webserver
+  #  webserver:
+  #    image: pyrender:0.0.1
+  #    container_name: webserver
+  #    restart: always
+  #    ports:
+  #      - "5000:5000"
+  #    depends_on:
+  #      - mysql
+  #      - redis
+  #    env_file:
+  #      - .env
+  #    volumes:
+  #      - .:/opt/app
+  #    command:
+  #      - render
+  #      - webserver
 
-#  scheduler:
-#    image: pyrender:0.0.1
-#    container_name: scheduler
-#    restart: always
-#    depends_on:
-#      - mysql
-#      - redis
-#    env_file:
-#      - .env
-#    command:
-#      - render
-#      - scheduler
-#
-#  worker:
-#    image: pyrender:0.0.1
-#    container_name: worker
-#    restart: always
-#    depends_on:
-#      - mysql
-#      - redis
-#    env_file:
-#      - .env
-#    command:
-#      - render
-#      - worker
+  scheduler:
+    image: pyrender:0.0.1
+    container_name: scheduler
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    env_file:
+      - .env
+    command:
+      - render
+      - scheduler
+
+  worker:
+    image: pyrender:0.0.1
+    container_name: worker
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    env_file:
+      - .env
+    command:
+      - render
+      - worker

@@ -6,7 +6,7 @@ from functools import reduce, wraps
 
 from flask import Blueprint, render_template, request, redirect, abort
 from flask_login import login_required, current_user
-from sqlalchemy import and_
+from sqlalchemy import and_, String
 
 from render.builder.utils import outside_url_for, is_relationship, relationship_class
 from render.utils.config import config
@@ -547,6 +547,10 @@ class ViewModel:
                             res = UpdateValue(bool(int(request.form.get(field, False))))
                         case "Date":
                             res = UpdateValue(datetime.fromtimestamp(int(value) / 1000.0))
+                        case "String":
+                            res = UpdateValue(value)
+                        case "TIMESTAMP":
+                            res = UpdateValue(datetime.fromisoformat(value))
                         case _:
                             res = NoUpdate()
 
