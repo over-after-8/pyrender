@@ -1,3 +1,2 @@
 recursive-include render *.html
 recursive-include render/www/static *
-recursive-exclude render/www/node_modules *
