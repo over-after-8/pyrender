@@ -17,8 +17,28 @@ services:
     ports:
       - "6379:6379"
 
+  db_init:
+    build: .
+    container_name: db_init
+    depends_on:
+      - mysql
+    env_file:
+      - .env
+    command:
+      - render
+      - db_init
+
+  builder:
+    build: .
+    container_name: builder
+    volumes:
+      - ./dist:/opt/app/dist
+    command:
+      - python
+      - -m
+      - build
+
   webserver:
-#    image: pyrender:0.0.1
     build: .
     container_name: webserver
     restart: always

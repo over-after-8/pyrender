@@ -11,3 +11,5 @@ dist
 package-lock.json
 build
 render.egg-info
+dist
+build
