@@ -2,12 +2,35 @@
 
 ## How to install?
 
-1. Download source code
-2. Install `node`
-3. Run commands as below:
+### Build wheel file
 
 ```shell
-python setup.py compile_assert install clean
+docker compose up builder
+```
+
+### Install
+
+```shell
+pip install dist/<file>.whl
+```
+
+## Run
+
+### Init db
+
+```shell
+docker compose up -d mysql
+docker compose up init_db
+```
+
+### Run webserver, worker, scheduler
+
+```shell
+docker compose up -d webserver
+
+docker compose up -d redis
+docker compose up -d worker
+docker compose up -d scheduler
 ```
 
 ## Usage
