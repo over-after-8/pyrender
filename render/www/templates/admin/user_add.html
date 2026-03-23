@@ -1,4 +1,4 @@
-{% extends 'render/application_base.html' %}
+{% extends 'application_base.html' %}
 
 {% block content %}
 
@@ -8,6 +8,6 @@
 
     <div id="root_container" class="pt-3"></div>
 
-    <script src="{{ url_for('admin.static', filename='dist/user_change_password_view.js') }}"></script>
+    <script src="{{ url_for('admin.static', filename='dist/user_add_view.js') }}"></script>
 
 {% endblock %}

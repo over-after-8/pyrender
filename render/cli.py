@@ -1,82 +1,19 @@
-import argparse
 import logging
 
-import celery
+import click
+from flask import Flask
 
 from render.builder.utils import inheritors
 from render.builder.viewmodel import ViewModel
-from render.models.job import JobRun
-from render.models.module import user_modules, Module
+from render.models.module import Module
 from render.models.permission import Permission
-from render.models.role import Role, role_permissions
+from render.models.role import Role
 from render.models.user import User
 from render.models.user_profile import UserProfile
-from render.models.job import Job
-from render.utils.config import config
 from render.utils.db import provide_session
-from render.worker.celery_worker import CeleryWorker
-from render.main import start, main_app
-
-from render.www.views.role_view_model import RoleVM
-from render.www.views.user_view_model import UserVM
-from render.www.views.permission_view_model import PermissionVM
-from render.www.views.module_view_model import ModuleVM
-from render.www.views.user_profile_view_model import UserProfileVM
-from render.www.views.job_vm import JobVM
-from render.www.views.job_run_vm import JobRunVM
+from render.www.app import create_app
 
 logger = logging.getLogger(__name__)
-
-
-class Parser:
-    def add_to_parser(self, parser):
-        raise NotImplementedError()
-
-
-class SubApp(Parser):
-    def __init__(self, name, commands):
-        super().__init__()
-        self.name = name
-        self.commands = commands
-
-    def add_to_parser(self, parser):
-        app_parser = parser.add_parser(self.name)
-        sub_proc = app_parser.add_subparsers(help="a command")
-        for command in self.commands:
-            command.add_to_parser(sub_proc)
-
-
-class Command(Parser):
-    def __init__(self, func, args):
-        super().__init__()
-        self.func = func
-        self.args = args
-
-    def add_to_parser(self, parser):
-        command_parser = parser.add_parser(self.func.__name__)
-        command_parser.set_defaults(func=self.func)
-        for arg in self.args:
-            arg.add_to_parser(command_parser)
-
-
-class Arg:
-    def __init__(self, flags=None, help=None, action=None, default=None, required=None):
-        self.flags = flags
-        self.kwargs = {}
-        for k, v in locals().items():
-            if v is None:
-                continue
-            if k in ("self", "flags"):
-                continue
-            self.kwargs[k] = v
-
-    def add_to_parser(self, parser):
-        parser.add_argument(*self.flags, **self.kwargs)
-
-
-def version(arg):
-    from render.version import version as v
-    print(v)
 
 
 def fullname(klass):
@@ -138,7 +75,8 @@ def init_roles(user, session=None):
     session.add(update_user)
 
 
-def init_permissions(user):
+@provide_session
+def init_permissions(user, session=None):
     view_model_classes = map(lambda x: x.__name__, inheritors(ViewModel))
     base_permissions = {
         "edit.all",
@@ -150,85 +88,59 @@ def init_permissions(user):
         "list.all"
     }
 
-    @provide_session
-    def add_permissions(perms, session=None):
+    def add_permissions(perms):
         session.bulk_save_objects(perms)
-        session.commit()
 
     permissions = [Permission(name=f"{vmc.lower()}.{p}", created_by=user.id) for vmc in view_model_classes for p in
                    base_permissions]
     add_permissions(permissions)
 
 
-def worker(args):
-    celery_app = CeleryWorker(config).get_celery_app()
-    wk = celery_app.Worker()
-    wk.start()
-
-
-def webserver(args):
-    start(main_app)
-
-
-def scheduler(args):
-    from render.worker.scheduler import schedule
-    schedule()
-
-
 @provide_session
-def db_init(arg, session=None):
+def init_db(session=None):
     from render.models.user import User
     from sqlalchemy.exc import OperationalError
 
-    from render.utils import setting
-    from render.models.user import user_roles
-
     try:
-        User.__table__.create(setting.mysql_engine, checkfirst=True)
-        Role.__table__.create(setting.mysql_engine, checkfirst=True)
-        Permission.__table__.create(setting.mysql_engine, checkfirst=True)
-        Module.__table__.create(setting.mysql_engine, checkfirst=True)
-        UserProfile.__table__.create(setting.mysql_engine, checkfirst=True)
-        Job.__table__.create(setting.mysql_engine, checkfirst=True)
-        JobRun.__table__.create(setting.mysql_engine, checkfirst=True)
-        user_roles.create(setting.mysql_engine, checkfirst=True)
-        role_permissions.create(setting.mysql_engine, checkfirst=True)
-        user_modules.create(setting.mysql_engine, checkfirst=True)
-
         User.add("a@mail.com", "a", 1)
         user = session.query(User).filter(User.user_name == "a@mail.com").one_or_none()
         profile = UserProfile(name=user.user_name, id=user.id)
         session.add(profile)
 
-        init_permissions(user)
-        init_roles(user)
-        init_applications(user)
+        init_permissions(user, session=session)
+        init_roles(user, session=session)
+        init_applications(user, session=session)
 
     except OperationalError as e:
         logger.error(e)
         raise e
 
 
-class APPFactory(object):
-    common_args = {
-        "debug": Arg(flags=("-d", "--debug"), help="debug mode")
-    }
+@click.group()
+def cli():
+    pass
 
-    apps = [
-        Command(func=version, args=[]),
-        Command(func=db_init, args=[]),
-        Command(func=scheduler, args=[]),
-        Command(func=worker, args=[]),
-        Command(func=webserver, args=[])
-    ]
 
-    @classmethod
-    def get_parser(cls):
-        parser = argparse.ArgumentParser()
-        sub_parsers = parser.add_subparsers(help="types of application")
-        for app in APPFactory.apps:
-            app.add_to_parser(sub_parsers)
-        return parser
+@cli.group()
+def db():
+    pass
 
-# if __name__ == '__main__':
-#     worker([])
+
+@db.command("init")
+def db_init():
+    init_db()
+
+
+@cli.group()
+def webserver():
+    pass
+
+@webserver.command("start")
+def webserver_start():
+    app = Flask(__name__)
+    app = create_app(app, [])
+    app.run(host="0.0.0.0", port=5000)
+
+@cli.command()
+def version():
+    print("Hello")

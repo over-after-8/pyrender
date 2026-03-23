@@ -11,7 +11,7 @@ bp = Blueprint("auth", __name__, url_prefix="/auth", template_folder="templates"
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "GET":
-        return render_template("render/auth/login.html"), 200
+        return render_template("auth/login.html"), 200
     else:
         username = request.form["email"]
         password = request.form["password"]
@@ -22,7 +22,7 @@ def login():
             return redirect(url_for("index"))
         else:
             flash("Invalid username or password")
-            return render_template("render/auth/login.html", title="Login",
+            return render_template("auth/login.html", title="Login",
                                    flashed_messages=json.dumps(get_flashed_messages())), 400
 
 
@@ -36,7 +36,7 @@ def logout():
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "GET":
-        return render_template("render/auth/register.html", title="Register",
+        return render_template("auth/register.html", title="Register",
                                flashed_messages=json.dumps(get_flashed_messages())), 200
     else:
         username = request.form["email"]
@@ -45,7 +45,7 @@ def register():
 
         if password != repeat_password:
             flash("passwords are not match")
-            return render_template("render/auth/register.html", title="Register",
+            return render_template("auth/register.html", title="Register",
                                    flashed_messages=json.dumps(get_flashed_messages())), 400
         if password == repeat_password:
             res = User.add(user_name=username, password=password)

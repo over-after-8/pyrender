@@ -22,8 +22,8 @@ from render.www.views.job_vm import JobVM
 class Admin(Application):
 
     def declare_bp(self):
-        bp = Blueprint("admin", __name__, url_prefix="/admin", template_folder="templates/render/admin",
-                       static_folder="static/render")
+        bp = Blueprint("admin", __name__, url_prefix="/admin", template_folder="templates",
+                       static_folder="static")
         return bp
 
     def init_menu(self):
@@ -56,7 +56,7 @@ class Admin(Application):
 
     @login_required
     def index(self):
-        return render_template("admin_index.html", title="Admin Page"), 200
+        return render_template("admin/admin_index.html", title="Admin Page"), 200
 
 
 admin_application = Admin("AdminZone")

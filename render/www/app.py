@@ -1,6 +1,8 @@
+import json
 from functools import reduce
 
 from flask_login import LoginManager
+from flask_wtf import CSRFProtect
 
 from render.builder.utils import get_class
 from render.models.user import User
@@ -21,13 +23,16 @@ def create_app(app, applications):
 
     applications.append(admin_application)
 
+    app.secret_key = "your-secret-key"
+    CSRFProtect(app)
+
     @login_manager.user_loader
     @provide_session
     def load_user(user_id, session=None):
         user = session.query(User).filter(User.id == user_id).one_or_none()
-        roles = user.roles
-        permissions = reduce(lambda r, x: r + x.permissions, roles, [])
-        modules = user.modules
+        # roles = user.roles
+        # permissions = reduce(lambda r, x: r + x.permissions, roles, [])
+        # modules = user.modules
         return user
 
     @app.context_processor
@@ -38,9 +43,9 @@ def create_app(app, applications):
             return [get_class(x.class_name)(x.name) for x in user.modules]
 
         def inject_applications(user_id):
-            return load_application_by_user(user_id)
+            return [x.to_dict() for x in load_application_by_user(user_id)]
 
-        return dict(inject_applications=inject_applications, path_for=path_for)
+        return dict(inject_applications=inject_applications, path_for=path_for, json_dumps=json.dumps)
 
     for application in applications:
         application.register()
