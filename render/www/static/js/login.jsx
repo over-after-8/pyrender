@@ -1,51 +1,55 @@
+import React from "react"
+import {CAlert, CButton, CCard, CCardBody, CCol, CContainer, CForm, CFormInput, CRow} from "@coreui/react"
+import {CSRFToken} from "./components/utils"
 import {createRoot} from "react-dom/client";
-import React from "react";
-import {CSRFToken} from "./components/utils";
 
-function App({logo, csrf_token, flashed_messages, url_register}) {
-
+function App({csrf_token, flashed_messages}) {
     flashed_messages = flashed_messages.length > 0 && JSON.parse(flashed_messages) || []
+    console.log(flashed_messages)
+
     return (
-        <>
+        <CContainer className="d-flex align-items-center min-vh-100">
+            <CRow className="justify-content-center w-100">
+                <CCol md={6} lg={4}>
+                    <CCard>
+                        <CCardBody>
+                            <h3 className="text-center mb-4">Login</h3>
+                            {flashed_messages.map((msg, idx) => (
+                                <CAlert key={idx} color={"danger"}>
+                                    {msg}
+                                </CAlert>
+                            ))}
 
-            <form method="POST" name={"login"}>
-                <CSRFToken csrf_token={csrf_token}></CSRFToken>
+                            <CForm action="/auth/login" method="POST">
+                                <CSRFToken csrf_token={csrf_token}/>
 
-                <img className="mb-4" src={logo} alt=""
-                     width="72" height="57"/>
-                {
-                    flashed_messages.length > 0 &&
-                    flashed_messages.map(x => {
-                        return <div className="alert alert-danger" role="alert">
-                            {x}
-                        </div>
-                    })
-                }
-                <h1 className="h3 mb-3 fw-normal">Please sign in</h1>
+                                <CFormInput
+                                    type="text"
+                                    id="username"
+                                    name="username"
+                                    placeholder="Username"
+                                    className="mb-3"
+                                    required
+                                />
 
-                <div className="form-floating">
-                    <input type="email" className="form-control" id="floatingInput" placeholder="name@example.com"
-                           name="email"/>
-                    <label htmlFor="floatingInput">Email address</label>
-                </div>
-                <div className="form-floating">
-                    <input type="password" className="form-control" id="floatingPassword" placeholder="Password"
-                           name="password"/>
-                    <label htmlFor="floatingPassword">Password</label>
-                </div>
+                                <CFormInput
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    placeholder="Password"
+                                    className="mb-3"
+                                    required
+                                />
 
-                <div className="form-check text-start my-3">
-                    <input className="form-check-input" type="checkbox" value="remember-me" id="flexCheckDefault"
-                           name="remember"/>
-                    <label className="form-check-label" htmlFor="flexCheckDefault">
-                        Remember me
-                    </label>
-                </div>
-                <button className="btn btn-primary w-100 py-2" type="submit">Sign in</button>
-                <p className={"mt-2 mb-3"}><a href={url_register}>Don't have an account? Let's create!</a></p>
-                <p className="mt-5 mb-3 text-body-secondary">© 2024</p>
-            </form>
-        </>
+                                <CButton type="submit" color="primary" className="w-100">
+                                    Login
+                                </CButton>
+                            </CForm>
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+            </CRow>
+        </CContainer>
     )
 }
 
@@ -54,8 +58,7 @@ const root = createRoot(container)
 const logo = document.querySelector('meta[name="logo"]').content
 const csrf_token = document.querySelector('meta[name="csrf_token"]').content
 const flashed_messages = document.querySelector('meta[name="flashed_messages"]').content
-const url_register = document.querySelector('meta[name="url_register"]').content
 
 root.render(
-    <App logo={logo} csrf_token={csrf_token} flashed_messages={flashed_messages} url_register={url_register}/>
+    <App csrf_token={csrf_token} flashed_messages={flashed_messages}/>
 )

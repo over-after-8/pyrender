@@ -8,7 +8,7 @@ Base = declarative_base()
 def basic_fields(cls):
     cls.created_at = Column(TIMESTAMP, default=func.now(), nullable=False)
     cls.updated_at = Column(TIMESTAMP, default=func.now(), nullable=False)
-    cls.created_by = mapped_column(ForeignKey("users.id"))
+    cls.created_by = mapped_column(ForeignKey("admin_users.id"))
 
     return cls
 
@@ -16,7 +16,7 @@ def basic_fields(cls):
 def owner_field(back_populates):
     def wrapper(cls):
         from render.models.user import User
-        cls.owner_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+        cls.owner_id = Column(BigInteger, ForeignKey("admin_users.id"), nullable=False)
         cls.owner = relationship("User", back_populates=back_populates)
         setattr(User, back_populates, relationship(cls.__name__, back_populates="owner"))
         return cls

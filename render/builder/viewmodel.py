@@ -498,7 +498,7 @@ class ViewModel:
 
     @login_required
     @provide_session
-    @check_permission("list")
+    # @check_permission("list")
     def detail_item(self, item_id, session=None):
         item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
         if not item:
@@ -511,7 +511,7 @@ class ViewModel:
 
     @login_required
     @provide_session
-    @check_permission("edit")
+    # @check_permission("edit")
     def edit_item(self, item_id, session=None):
         if request.method == "GET":
             item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
@@ -563,7 +563,7 @@ class ViewModel:
 
     @login_required
     @provide_session
-    @check_permission("delete")
+    # @check_permission("delete")
     def delete_item(self, item_id, session=None):
         item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
         if request.method == "GET":
