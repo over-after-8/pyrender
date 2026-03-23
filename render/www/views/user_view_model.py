@@ -37,7 +37,7 @@ class UserVM(ViewModel):
                 "user_name": user_item.user_name,
                 "submit_url": url_for(".user_change_password", item_id=item_id)
             }
-            return render_template("render/admin/user_change_password.html",
+            return render_template("admin/user_change_password.html",
                                    title="Change Password",
                                    model=json.dumps(res)), 200
         else:
@@ -49,7 +49,7 @@ class UserVM(ViewModel):
     @provide_session
     def user_add(self, session=None):
         if request.method == "GET":
-            return render_template("render/admin/user_add.html", title="Add User"), 200
+            return render_template("admin/user_add.html", title="Add User"), 200
         else:
             user_name = request.form.get("user_name", None)
             password = request.form.get("password", None)

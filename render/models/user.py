@@ -1,16 +1,14 @@
-import dataclasses
 import hashlib
 import random
 import string
 from typing import List
 
 from flask_login import UserMixin
-from sqlalchemy import BigInteger, Column, String, TIMESTAMP, func, Boolean, ForeignKey, Table
+from sqlalchemy import BigInteger, Column, String, Boolean, ForeignKey, Table
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
 from render.models.module import user_modules, Module
 from render.models.role import Role
-from render.models.user_profile import UserProfile
 from render.utils.base import Base, basic_fields
 from render.utils.db import provide_session
 
@@ -99,3 +97,10 @@ class User(Base, UserMixin):
             user.salt = salt
             return True
         return False
+
+    @provide_session
+    def to_dict(self, session=None):
+        return {
+            "user_name": self.user_name,
+            "name": self.user_name
+        }

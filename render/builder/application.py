@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, url_for
 
 from render.builder.menu import Menu
 
@@ -34,9 +34,22 @@ class Application:
 
     def utility_process(self):
         def inject_menu():
-            return self.menu.get()
+            return {
+                "application_name": self.name,
+                "menu": self.menu.get()
+            }
 
         return dict(inject_menu=inject_menu)
 
     def routes(self):
         pass
+
+    def index(self):
+        raise NotImplemented()
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "menu": self.menu.__dict__,
+            "url": url_for(self.bp.name + ".index")
+        }

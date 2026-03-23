@@ -19,7 +19,7 @@ class Menu:
             if item.category not in res:
                 res[item.category] = []
             item.url = outside_url_for(f"{self.root}.{item.controller}")()
-            res[item.category].append(item)
+            res[item.category].append(item.__dict__)
             return res
 
         return reduce(lambda r, x: update_res(r, x), self.items, {})

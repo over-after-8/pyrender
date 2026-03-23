@@ -1,9 +1,9 @@
 const path = require("path");
 const webpack = require('webpack');
 
-const CSS_DIR = path.resolve(__dirname, './static/render/css');
-const JS_DIR = path.resolve(__dirname, './static/render/js');
-const BUILD_DIR = path.resolve(__dirname, './static/render/dist');
+const CSS_DIR = path.resolve(__dirname, './static/css');
+const JS_DIR = path.resolve(__dirname, './static/js');
+const BUILD_DIR = path.resolve(__dirname, './static/dist');
 
 module.exports = {
     resolve: {

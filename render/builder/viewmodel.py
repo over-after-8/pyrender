@@ -1,19 +1,20 @@
+import hashlib
 import json
 import os
 import uuid
 from datetime import datetime
+from enum import Enum
 from functools import reduce, wraps
 
 from flask import Blueprint, render_template, request, redirect, abort
 from flask_login import login_required, current_user
-from sqlalchemy import and_, String
+from sqlalchemy import and_
 
 from render.builder.utils import outside_url_for, is_relationship, relationship_class
+from render.exceptions.user_exceptions import UserNotFoundError
+from render.models.user import User
 from render.utils.config import config
 from render.utils.db import provide_session
-
-from enum import Enum
-import hashlib
 
 
 class FieldType(Enum):
@@ -157,8 +158,10 @@ class DetailViewModel(SubViewModel):
 
 @provide_session
 def permissions_by_user(user_id, session=None):
-    res = reduce(lambda r, x: r + x.permissions, current_user.roles, [])
-    return res
+    user = session.query(User).filter(User.id == user_id).one_or_none()
+    if user:
+        return reduce(lambda r, x: r + x.permissions, user.roles, [])
+    raise UserNotFoundError("User not found")
 
 
 @provide_session
@@ -368,13 +371,14 @@ class ViewModel:
                  list_view_model=ListViewModel,
                  delete_view_model=DeleteViewModel,
                  detail_view_model=DetailViewModel,
-                 list_template="render/list_view.html",
-                 detail_template="render/detail_view.html",
-                 edit_template="render/edit_view.html",
-                 delete_template="render/delete_view.html",
-                 add_template="render/add_view.html"):
+                 list_template="list_view.html",
+                 detail_template="detail_view.html",
+                 edit_template="edit_view.html",
+                 delete_template="delete_view.html",
+                 add_template="add_view.html"):
         self.model_class = model_class
-        self.__class__.bp = Blueprint(self.__class__.__name__, __name__,
+        self.__class__.bp = Blueprint(self.__class__.__name__,
+                                      self.__class__.__module__,
                                       url_prefix=f'/{self.__class__.__name__}',
                                       template_folder=self.template_folder,
                                       static_folder=self.static_folder)
@@ -434,8 +438,8 @@ class ViewModel:
 
     @login_required
     @provide_session
-    @check_permission("list")
-    def list_items(self, created_by, session=None):
+    # @check_permission("list")
+    def list_items(self, session=None):
         keyword = request.args.get("keyword", None)
         page = max(int(request.args.get("page", 1)), 1)
         page_size = int(request.args.get("page_size", 20))
@@ -445,9 +449,6 @@ class ViewModel:
             query = query.filter(reduce(lambda r, x: r | x,
                                         [getattr(self.model_class, field).like(f"%{keyword}%") for field in
                                          self.search_fields]))
-
-        if created_by:
-            query = query.filter(self.model_class.created_by == created_by)
 
         query = query.order_by(self.model_class.id.desc())
         total = query.count()
