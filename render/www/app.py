@@ -1,5 +1,4 @@
 import json
-from functools import reduce
 
 from flask_login import LoginManager
 from flask_wtf import CSRFProtect
