@@ -43,7 +43,7 @@ function AddFormHelper({name, type}) {
 
 function AddView({model, csrf_token}) {
     return (
-        <CContainer className="container-fluid">
+        <CContainer fluid={true}>
             <CRow>
                 <CCol md={6}>
                     <CCard>
