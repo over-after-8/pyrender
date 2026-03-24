@@ -4,10 +4,10 @@ from flask_login import login_required
 from render.builder.application import Application
 
 
-class Admin(Application):
+class Index(Application):
 
     def declare_bp(self):
-        bp = Blueprint("admin", __name__, url_prefix="/admin", template_folder="templates",
+        bp = Blueprint("index", __name__, url_prefix="/index", template_folder="templates",
                        static_folder="static")
         return bp
 
@@ -30,5 +30,3 @@ class Admin(Application):
     def index(self):
         return render_template("admin/admin_index.html", title="Admin Page"), 200
 
-
-admin_application = Admin("AdminZone")

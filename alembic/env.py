@@ -4,7 +4,7 @@ from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-from render.models.user import User  # noqa
+from render.models.user import *  # noqa
 from render.utils.base import Base
 from render.utils.config import config as app_config
 

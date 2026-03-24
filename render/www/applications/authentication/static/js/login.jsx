@@ -1,6 +1,6 @@
 import React from "react"
 import {CAlert, CButton, CCard, CCardBody, CCol, CContainer, CForm, CFormInput, CRow} from "@coreui/react"
-import {CSRFToken} from "./components/utils"
+import {CSRFToken} from "../../../../static/js/components/utils"
 import {createRoot} from "react-dom/client";
 
 function App({csrf_token, flashed_messages}) {

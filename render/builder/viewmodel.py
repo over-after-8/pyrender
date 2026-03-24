@@ -349,8 +349,8 @@ class ViewModel:
     page = 1
     page_size = 20
     total = 0
-    template_folder = "templates"
-    static_folder = "static"
+    template_folder = os.path.join(os.path.dirname(__file__), "../www/templates")
+    static_folder = os.path.join(os.path.dirname(__file__), "../www/static")
 
     bp: Blueprint = None
     list_view_model: ListViewModel = None

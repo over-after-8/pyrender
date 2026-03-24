@@ -1,7 +1,7 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
 import {useForm} from "react-hook-form"
-import {CSRFToken} from "../components/utils";
+import {CSRFToken} from "../../../../static/js/components/utils";
 
 
 function AddView({csrf_token}) {

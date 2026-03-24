@@ -1,6 +1,6 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
-import {CSRFToken} from "./components/utils";
+import {CSRFToken} from "../../../../static/js/components/utils";
 
 
 function App({logo, csrf_token, flashed_messages}) {

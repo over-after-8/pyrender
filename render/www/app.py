@@ -6,8 +6,9 @@ from flask_wtf import CSRFProtect
 from render.builder.utils import get_class
 from render.models.user import User
 from render.utils.db import provide_session
-from render.www import auth
-from render.www.admin import admin_application
+from render.www.applications.administration.app import Administration
+from render.www.applications.authentication import auth
+from render.www.index import Index
 from render.www.utils import path_for
 
 
@@ -20,7 +21,7 @@ def create_app(app, applications):
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
 
-    applications.append(admin_application)
+    applications.append(Administration("Administration"))
 
     app.secret_key = "your-secret-key"
     CSRFProtect(app)
@@ -49,4 +50,7 @@ def create_app(app, applications):
     for application in applications:
         application.register()
         app.register_blueprint(application.bp)
+
+    index = Index("Index")
+    app.register_blueprint(index.bp)
     return app

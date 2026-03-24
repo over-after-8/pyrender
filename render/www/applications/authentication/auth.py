@@ -18,7 +18,7 @@ user_service = UserService(PasswordManager())
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "GET":
-        return render_template("auth/login.html"), 200
+        return render_template("login.html"), 200
     else:
         username = request.form["username"]
         password = request.form["password"]
@@ -30,7 +30,7 @@ def login():
         except (PasswordMismatchError, UserNotFoundError) as e:
             logger.exception(e)
             flash("Invalid username or password")
-            return render_template("auth/login.html", title="Login",
+            return render_template("login.html", title="Login",
                                    flashed_messages=json.dumps(get_flashed_messages())), 400
 
 
