@@ -1,186 +1,219 @@
 import {createRoot} from "react-dom/client";
 import React, {useState} from "react";
-import Select from 'react-select'
-import {CSRFToken} from "./components/utils";
-import "react-datetime/css/react-datetime.css";
+import {
+    CBadge,
+    CButton,
+    CCard,
+    CCardBody,
+    CCol,
+    CContainer,
+    CForm,
+    CFormCheck,
+    CFormInput,
+    CFormLabel,
+    CRow,
+} from "@coreui/react";
+import Select from "react-select";
 import Datetime from "react-datetime";
+import "react-datetime/css/react-datetime.css";
+import {CSRFToken} from "./components/utils";
 
-
-function date2timestamp(dateStr) {
-  if (dateStr !== null) {
-    const split = dateStr.split("-")
-    const date = new Date(split[0], split[1] - 1, split[2])
-    return date.getTime()
-  }
-  return ""
-
+function dateToISO(dateStr) {
+    if (!dateStr) return "";
+    return dateStr;
 }
 
 function EditFormHelper({name, type, initValue, relationships}) {
-  switch (type) {
-    case "image_upload": {
-      return (
-        <div>
-          <label htmlFor={`file_${name}`} className="form-label">Default file input example</label>
-          <input className="form-control" type="file" id={`file_${name}`} name={name}/>
-        </div>
-      )
+    switch (type) {
+        case "image_upload": {
+            return (
+                <div>
+                    <CFormLabel htmlFor={`file_${name}`}>Upload file</CFormLabel>
+                    <CFormInput type="file" id={`file_${name}`} name={name}/>
+                </div>
+            );
+        }
+
+        case "Date": {
+            const [value, setValue] = useState(dateToISO(initValue));
+
+            return (
+                <div>
+                    <input type="hidden" name={name} value={value}/>
+                    <Datetime
+                        onChange={(v) => {
+                            // v can be a moment object or a string
+                            const formatted = v && v.format ? v.format("YYYY-MM-DD") : String(v || "");
+                            setValue(formatted);
+                        }}
+                        value={value || ""}
+                        dateFormat={"YYYY-MM-DD"}
+                        timeFormat={false}
+                        inputProps={{className: "form-control"}}
+                    />
+                </div>
+            );
+        }
+
+        case "Boolean": {
+            const [value, setValue] = useState(Boolean(initValue));
+            return (
+                <div className="d-flex align-items-center">
+                    <CFormCheck
+                        type="checkbox"
+                        name={name}
+                        checked={value}
+                        onChange={() => setValue((v) => !v)}
+                        className="me-2"
+                    />
+                    <input type="hidden" name={name} value={value ? 1 : 0}/>
+                </div>
+            );
+        }
+
+        case "Relationship": {
+            const relOptions = (relationships?.[name] || []).map((item) => ({
+                value: item.id,
+                label: item.name,
+            }));
+
+            const initialSelected = (initValue || []).map((it) => ({
+                value: it.id,
+                label: it.name,
+            }));
+
+            const [selected, setSelected] = useState(initialSelected);
+
+            const onSelectChangeHandler = (selectedItems) => {
+                setSelected(selectedItems || []);
+            };
+
+            return (
+                <>
+                    <Select
+                        options={relOptions}
+                        name={name}
+                        closeMenuOnSelect={false}
+                        isMulti
+                        value={selected}
+                        onChange={onSelectChangeHandler}
+                    />
+                    {(selected || []).map((s, idx) => (
+                        <input key={`${name}_hidden_${idx}`} type="hidden" name={`${name}[]`} value={s.value}/>
+                    ))}
+                </>
+            );
+        }
+
+        default: {
+            const [value, setValue] = useState(initValue == null ? "" : String(initValue));
+            return (
+                <CFormInput
+                    name={name}
+                    type="text"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                />
+            );
+        }
     }
-    case "Date": {
-      const [value, setValue] = useState(date2timestamp(initValue))
-      return (
-        <div>
-          <input type={"hidden"} name={name} value={value}/>
-          <Datetime onChange={setValue} value={value} dateFormat={"YYYY-MM-DD"}
-                    timeFormat={false}/>
-        </div>
-      )
-    }
-
-    case "Boolean": {
-      const [value, setValue] = useState(Boolean(initValue))
-      const onCheckBoxChangeHandler = () => {
-        setValue(!value)
-      }
-      return (
-        <input className="form-check-input ms-5" type="checkbox" name={name} checked={value}
-               value={value && 1 || 0}
-               onChange={() => onCheckBoxChangeHandler()}></input>
-
-      )
-    }
-
-    case "Relationship": {
-      const [value, setValue] = useState(initValue)
-
-      const options = relationships[name].map((item) => {
-        return {value: item.id, label: item.name}
-      })
-
-      const selectedValue = value.map((item) => {
-        return {value: item.id, label: item.name}
-      })
-
-      const [selected, setSelected] = React.useState(selectedValue)
-
-      const onSelectChangeHandler = (selected) => {
-        setSelected(selected)
-        setValue(selected.map((item) => {
-          return {id: item.id, name: item.label}
-        }))
-      }
-
-      return (
-        <>
-          <Select options={options}
-                  name={name}
-                  closeMenuOnSelect={false}
-                  isMulti
-                  value={selected} onChange={onSelectChangeHandler}
-          ></Select>
-        </>
-      )
-    }
-    default: {
-      const [value, setValue] = useState(String(initValue))
-      return (
-        <input className={"form-control"} name={name} type="input" value={value}
-               onChange={(event) => setValue(event.target.value)}></input>
-      )
-    }
-  }
 }
 
-function DisabledEditFormHelper({
-                                  type, value
-                                }) {
-  switch (type) {
-    case "Boolean":
-      return (
-        <input className="form-check-input" type="checkbox" checked={value} value={value && 1 || 0}
-               disabled={true}></input>
-      )
-    case "Relationship":
-      return (
-        <>
-          <br/>
-          {
-            value.map((item) => {
-              return <span className="badge text-bg-primary me-1">{item.name}</span>
-            })
-          }
-        </>
-      )
-    default:
-      return (
-        <input className={"form-control"} type="input" value={value} disabled={true}></input>
-      )
-  }
+function DisabledEditFormHelper({type, value}) {
+    switch (type) {
+        case "Boolean":
+            return <CFormCheck type="checkbox" checked={Boolean(value)} disabled/>;
+        case "Relationship":
+            return (
+                <div>
+                    {(value || []).map((item, idx) => (
+                        <CBadge color="primary" className="me-1" key={`${idx}_${item.id || item.name}`}>
+                            {item.name || item}
+                        </CBadge>
+                    ))}
+                </div>
+            );
+        default:
+            return <CFormInput type="text" value={value ?? ""} disabled/>;
+    }
 }
 
 function EditView({model, csrf_token}) {
-  console.log(model)
-  return (
-    <>
-      <div className={"row"}>
-        <div className={"col-md-6"}>
-          <form name={"editForm"} className={"smaller-font"} method={"post"} encType={"multipart/form-data"}>
-            <CSRFToken csrf_token={csrf_token}></CSRFToken>
-            {
-              model.disabled_fields.map((field) => {
-                return (
-                  <div className="mb-3 form-group">
-                    <label><strong>{field}</strong></label>
-                    <DisabledEditFormHelper type={model.field_types[field]}
-                                            value={model.item[field][0]}></DisabledEditFormHelper>
-                  </div>
-                )
-              })
-            }
-            {
-              model.edit_fields.map((field) => {
-                return (
-                  <div className="mb-3 form-group">
-                    <label><strong>{field}</strong></label>
-                    <EditFormHelper name={field}
-                                    type={model.field_types[field]}
-                                    initValue={model.item[field][0]}
-                                    relationships={model.relationships}/>
-                  </div>
-                )
-              })
-            }
-            <button className={"btn btn-primary me-2"} type={"submit"}><i
-              className="bi bi-save"></i> Save
-            </button>
-            <button type={"button"} className={"btn btn-outline-secondary"} onClick={() => {
-              history.back()
-            }}><i className="bi bi-x-lg"></i> Cancel
-            </button>
-          </form>
-        </div>
-      </div>
-    </>
-  )
-}
+    const m = model || {};
+    const disabledFields = m.disabled_fields || [];
+    const editFields = m.edit_fields || [];
+    const fieldTypes = m.field_types || {};
+    const relationships = m.relationships || {};
+    const item = m.item || {};
 
+    return (
+        <CRow>
+            <CCol xs={12} md={8} lg={6}>
+                <CCard>
+                    <CCardBody>
+                        <CForm name="editForm" method="post" encType="multipart/form-data">
+                            <CSRFToken csrf_token={csrf_token}/>
+
+                            {disabledFields.map((field) => (
+                                <div className="mb-3" key={`disabled_${field}`}>
+                                    <CFormLabel>
+                                        <strong>{field}</strong>
+                                    </CFormLabel>
+                                    <DisabledEditFormHelper
+                                        type={fieldTypes[field]}
+                                        value={(item[field] && item[field][0]) ?? ""}
+                                    />
+                                </div>
+                            ))}
+
+                            {editFields.map((field) => (
+                                <div className="mb-3" key={`edit_${field}`}>
+                                    <CFormLabel>
+                                        <strong>{field}</strong>
+                                    </CFormLabel>
+                                    <EditFormHelper
+                                        name={field}
+                                        type={fieldTypes[field]}
+                                        initValue={(item[field] && item[field][0]) ?? ""}
+                                        relationships={relationships}
+                                    />
+                                </div>
+                            ))}
+
+                            <div className="d-flex gap-2">
+                                <CButton color="primary" type="submit">
+                                    Save
+                                </CButton>
+
+                                <CButton color="secondary" variant="outline" type="button"
+                                         onClick={() => window.history.back()}>
+                                    Cancel
+                                </CButton>
+                            </div>
+                        </CForm>
+                    </CCardBody>
+                </CCard>
+            </CCol>
+        </CRow>
+    );
+}
 
 function App({model, title, csrf_token}) {
-  return (
-    <>
-      <h2>{title}</h2>
-      <EditView model={JSON.parse(model)} csrf_token={csrf_token}></EditView>
-    </>
-  )
+    const parsed = typeof model === "string" ? JSON.parse(model) : model;
+    return (
+        <>
+            <h4 className="m-0">{title}</h4>
+            <CContainer fluid className="p-3">
+                <EditView model={parsed} csrf_token={csrf_token}/>
+            </CContainer>
+        </>
+    )
 }
 
-const container = document.getElementById('root_container')
-const root = createRoot(container)
-const title = document.querySelector('meta[name="title"]').content
-const model = document.querySelector('meta[name="model"]').content
-const csrf_token = document.querySelector('meta[name="csrf_token"]').content
+const container = document.getElementById("root_container");
+const root = createRoot(container);
+const title = document.querySelector('meta[name="title"]')?.content ?? "";
+const model = document.querySelector('meta[name="model"]')?.content ?? "{}";
+const csrf_token = document.querySelector('meta[name="csrf_token"]')?.content ?? "";
 
-
-root.render(
-  <App title={title} model={model} csrf_token={csrf_token}/>
-)
+root.render(<App title={title} model={model} csrf_token={csrf_token}/>);

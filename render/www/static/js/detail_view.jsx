@@ -1,118 +1,139 @@
 import {createRoot} from "react-dom/client";
 import React from "react";
-
+import {
+    CBadge,
+    CButton,
+    CCard,
+    CCardBody,
+    CCol,
+    CContainer,
+    CDropdown,
+    CDropdownItem,
+    CDropdownMenu,
+    CDropdownToggle,
+    CFormCheck,
+    CRow,
+    CTable,
+    CTableBody,
+    CTableDataCell,
+    CTableRow,
+} from "@coreui/react";
+import CIcon from "@coreui/icons-react";
+import {cilArrowLeft} from "@coreui/icons";
 
 function ActionBox({actions}) {
+    const keys = Object.keys(actions || {});
+    if (keys.length === 0) return null;
+
     return (
-        <>
-            <div className="dropdown">
-                <button className="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                    Actions
-                </button>
-                <ul className="dropdown-menu">
-                    {
-                        Object.keys(actions).map((key, _) => {
-                            return <li><a className="dropdown-item" href={actions[key]}>{key}</a></li>
-                        })
-                    }
-                </ul>
-            </div>
-        </>
-    )
+        <CDropdown className="mb-3">
+            <CDropdownToggle color="success" variant="outline">
+                Actions
+            </CDropdownToggle>
+            <CDropdownMenu>
+                {keys.map((key) => (
+                    <CDropdownItem key={key} href={actions[key]}>
+                        {key}
+                    </CDropdownItem>
+                ))}
+            </CDropdownMenu>
+        </CDropdown>
+    );
 }
 
-
 function ShowViewHelper({value, type}) {
-
     switch (type) {
         case "Boolean":
             return (
-                <div className="form-check">
-                    <input className="form-check-input" disabled type="checkbox" checked={value}></input>
+                <div>
+                    <CFormCheck disabled checked={Boolean(value)}/>
                 </div>
-            )
-        case "Relationship":
+            );
+
+        case "Relationship": {
             if (typeof value === "string") {
-                return (
-                    <span>{value}</span>
-                )
-            } else {
+                return <span>{value}</span>;
+            }
+            if (Array.isArray(value) && value.length > 0) {
                 return (
                     <>
-                        {
-                            value.map((item, row_id) => {
-                                return <span className="badge text-bg-secondary me-2"
-                                             key={`${row_id}_${item}`}>{item}</span>
-                            })
-                        }
+                        {value.map((item, idx) => (
+                            <CBadge color="secondary" className="me-2" key={`${idx}_${item}`}>
+                                {item}
+                            </CBadge>
+                        ))}
                     </>
-                )
+                );
             }
+            return <span>-</span>;
+        }
+
         case "JobRunStatus":
-            return <span className="badge text-bg-secondary me-2">{value}</span>
+            return <CBadge color="secondary" className="me-2">{value}</CBadge>;
+
         default:
-            return (
-                <>{value}</>
-            )
+            return <>{value ?? "-"}</>;
     }
 }
 
 function ShowView({model}) {
-
-    console.log(model)
+    const actions = model?.actions ?? {};
+    const showFields = model?.show_fields ?? [];
+    const fieldTypes = model?.field_types ?? {};
+    const item = model?.item ?? {};
 
     return (
         <>
-            {
-                Object.keys(model.actions).length !== 0 &&
-                <>
-                    <ActionBox actions={model.actions}></ActionBox>
-                    <br/>
-                    <br/>
-                </>
-            }
+            {Object.keys(actions).length !== 0 && <ActionBox actions={actions}/>}
 
+            <CCard className="mb-3">
+                <CCardBody className="p-0">
+                    <CTable striped bordered hover responsive className="mb-0">
+                        <CTableBody>
+                            {showFields.map((field) => (
+                                <CTableRow key={field}>
+                                    <CTableDataCell style={{width: "30%"}}>
+                                        <strong>{field}</strong>
+                                    </CTableDataCell>
+                                    <CTableDataCell>
+                                        <ShowViewHelper value={item[field]} type={fieldTypes[field]}/>
+                                    </CTableDataCell>
+                                </CTableRow>
+                            ))}
+                        </CTableBody>
+                    </CTable>
+                </CCardBody>
+            </CCard>
 
-            <table className={"table table-striped table-bordered table-hover"}>
-                <tbody>
-                {model.show_fields.map((field) => {
-                    return <tr>
-                        <td><strong>{field}</strong></td>
-                        <td>
-                            <ShowViewHelper value={model.item[field]} type={model.field_types[field]}/>
-                        </td>
-                    </tr>
-                })}
-                </tbody>
-            </table>
-            <button type={"button"} className={"btn btn-outline-secondary"} onClick={() => {
-                history.back()
-            }}><i className="bi bi-arrow-bar-left"></i> Back
-            </button>
+            <CButton color="secondary" variant="outline" onClick={() => window.history.back()}>
+                <CIcon icon={cilArrowLeft} className="me-1"/>
+                Back
+            </CButton>
         </>
-    )
+    );
 }
-
 
 function App({model, title}) {
-    return (
-        <div>
-            <h4>{title}</h4>
-            <br/>
-            <ShowView model={JSON.parse(model)}></ShowView>
+    const parsed = typeof model === "string" ? JSON.parse(model) : model;
 
-        </div>
-    )
+    return (
+        <>
+            <h4 className="m-0">{title}</h4>
+            <CContainer fluid className="p-3">
+                <CRow>
+                    <CCol xs={12}>
+                        <ShowView model={parsed}/>
+                    </CCol>
+                </CRow>
+            </CContainer>
+        </>
+
+    );
 }
 
+const container = document.getElementById("root_container");
+const root = createRoot(container);
+const title = document.querySelector('meta[name="title"]')?.content ?? "";
+const model = document.querySelector('meta[name="model"]')?.content ?? "{}";
 
-const container = document.getElementById('root_container')
-const root = createRoot(container)
-const title = document.querySelector('meta[name="title"]').content
-const model = document.querySelector('meta[name="model"]').content
-
-
-root.render(
-    <App title={title} model={model}/>
-)
+root.render(<App title={title} model={model}/>);
