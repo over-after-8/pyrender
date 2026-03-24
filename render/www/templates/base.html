@@ -10,7 +10,7 @@
             <meta name="theme-color" content="#000000">
             <meta name="applications" content="{{ json_dumps(inject_applications(current_user.id)) }}">
             <meta name="menu" content="{{ json_dumps(inject_menu()) }}">
-            <meta name="current_user" content="{{ json_dumps(current_user.to_dict()) }}">
+            <meta name="current_user" content={{ current_user.user_name }}>
         {% endblock %}
 
         {% block head_css %}
@@ -44,6 +44,6 @@
 
 </body>
 
-<script src="{{ url_for('admin.static', filename='dist/index.js') }}"></script>
+<script src="{{ url_for('index.static', filename='dist/index.js') }}"></script>
 
 </html>

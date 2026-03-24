@@ -12,10 +12,10 @@ import parseMenu from "./components/menu";
 
 const header_navbar = createRoot(document.getElementById("header_navbar"))
 const applications = createApplications(JSON.parse(document.querySelector('meta[name="applications"]').content))
-const user = JSON.parse(document.querySelector('meta[name="current_user"]').content)
+const userName = document.querySelector('meta[name="current_user"]').content
 
 header_navbar.render(
-    <HeaderNavbar applications={applications} userName={user["user_name"]}/>
+    <HeaderNavbar applications={applications} userName={userName}/>
 )
 
 const applicationMenu = JSON.parse(document.querySelector('meta[name="menu"]').content)
