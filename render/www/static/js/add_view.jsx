@@ -43,39 +43,31 @@ function AddFormHelper({name, type}) {
 
 function AddView({model, csrf_token}) {
     return (
-        <CContainer fluid={true}>
-            <CRow>
-                <CCol md={6}>
-                    <CCard>
-                        <CCardBody>
-                            <CForm name="addForm" method="post">
-                                <CSRFToken csrf_token={csrf_token}/>
-                                {model.fields.map((field) => (
-                                    <AddFormHelper key={field.name} name={field.name} type={field.type}/>
-                                ))}
+        <CCard>
+            <CCardBody>
+                <CForm name="addForm" method="post">
+                    <CSRFToken csrf_token={csrf_token}/>
+                    {model.fields.map((field) => (
+                        <AddFormHelper key={field.name} name={field.name} type={field.type}/>
+                    ))}
 
-                                <CButton color="success" type="submit" className="me-2">
-                                    <CIcon icon={cilPlus} className="me-1"/>
-                                    Add
-                                </CButton>
+                    <CButton color="success" type="submit" className="me-2">
+                        <CIcon icon={cilPlus} className="me-1"/>
+                        Add
+                    </CButton>
 
-                                <CButton
-                                    color="danger"
-                                    variant="outline"
-                                    type="button"
-                                    onClick={() => history.back()}
-                                >
-                                    <CIcon icon={cilX} className="me-1"/>
-                                    Cancel
-                                </CButton>
-                            </CForm>
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-
-                <CCol md={6}></CCol>
-            </CRow>
-        </CContainer>
+                    <CButton
+                        color="danger"
+                        variant="outline"
+                        type="button"
+                        onClick={() => history.back()}
+                    >
+                        <CIcon icon={cilX} className="me-1"/>
+                        Cancel
+                    </CButton>
+                </CForm>
+            </CCardBody>
+        </CCard>
     );
 }
 
@@ -83,9 +75,19 @@ function App({model, title, csrf_token}) {
     const data = JSON.parse(model);
     return (
         <>
-            <h4 className="mb-6">{title}</h4>
-            <br/>
-            <AddView model={data} csrf_token={csrf_token}/>
+            <CContainer fluid={true}>
+                <CRow className="mb-3 align-items-center">
+                    <CCol>
+                        <h4 className="m-0">{title}</h4>
+                    </CCol>
+                </CRow>
+                <CRow>
+                    <CCol md={6}>
+                        <AddView model={data} csrf_token={csrf_token}/>
+                    </CCol>
+                    <CCol md={6}></CCol>
+                </CRow>
+            </CContainer>
         </>
     );
 }

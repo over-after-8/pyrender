@@ -3,8 +3,10 @@ from flask_login import login_required
 
 from render.builder.application import Application
 from render.builder.menu import MenuItem
-from render.models.user import User, Module
+from render.models.user import User, Module, Role, Permission
 from render.www.applications.administration.viewmodels.vm_module import VMModule
+from render.www.applications.administration.viewmodels.vm_permission import VMPermission
+from render.www.applications.administration.viewmodels.vm_role import VMRole
 from render.www.applications.administration.viewmodels.vm_user import VMUser
 
 
@@ -17,6 +19,8 @@ class Administration(Application):
     def init_menu(self):
         self.menu.add_item(MenuItem(name="User", controller="VMUser.list_items", category="Securities"))
         self.menu.add_item(MenuItem(name="Module", controller="VMModule.list_items", category="Securities"))
+        self.menu.add_item(MenuItem(name="Role", controller="VMRole.list_items", category="Securities"))
+        self.menu.add_item(MenuItem(name="Permission", controller="VMPermission.list_items", category="Securities"))
 
     def __init__(self, name):
         super().__init__(name)
@@ -25,6 +29,8 @@ class Administration(Application):
     def init_view_model(self):
         VMUser(User).register(self.bp)
         VMModule(Module).register(self.bp)
+        VMRole(Role).register(self.bp)
+        VMPermission(Permission).register(self.bp)
 
     def routes(self):
         self.bp.route("/")(self.index)

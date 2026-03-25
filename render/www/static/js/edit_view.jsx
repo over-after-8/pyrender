@@ -61,7 +61,6 @@ function EditFormHelper({name, type, initValue, relationships}) {
                 <div className="d-flex align-items-center">
                     <CFormCheck
                         type="checkbox"
-                        name={name}
                         checked={value}
                         onChange={() => setValue((v) => !v)}
                         className="me-2"
@@ -202,8 +201,12 @@ function App({model, title, csrf_token}) {
     const parsed = typeof model === "string" ? JSON.parse(model) : model;
     return (
         <>
-            <h4 className="m-0">{title}</h4>
             <CContainer fluid className="p-3">
+                <CRow className="mb-3 align-items-center">
+                    <CCol>
+                        <h4 className="m-0">{title}</h4>
+                    </CCol>
+                </CRow>
                 <EditView model={parsed} csrf_token={csrf_token}/>
             </CContainer>
         </>

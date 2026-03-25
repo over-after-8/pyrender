@@ -118,8 +118,13 @@ function App({model, title}) {
 
     return (
         <>
-            <h4 className="m-0">{title}</h4>
+
             <CContainer fluid className="p-3">
+                <CRow className="mb-3 align-items-center">
+                    <CCol>
+                        <h4 className="m-0">{title}</h4>
+                    </CCol>
+                </CRow>
                 <CRow>
                     <CCol xs={12}>
                         <ShowView model={parsed}/>

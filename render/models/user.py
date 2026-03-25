@@ -63,7 +63,6 @@ class User(Base, UserMixin):
     id = mapped_column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
     user_name = Column(String(63), unique=True, nullable=False, index=True)
     password = Column(String(4095), nullable=False, index=False)
-    salt = Column(String(7), nullable=False, index=False)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
 
     roles = relationship("Role", secondary=user_roles, back_populates="inc_users")
@@ -85,17 +84,16 @@ class Role(Base):
 
     id = mapped_column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
     name = Column(String(63), unique=True, nullable=False, index=True)
-    description = Column(String(255), nullable=True)
-
     inc_users = relationship("User", secondary=user_roles, back_populates="roles")
+    permissions = relationship("Permission", secondary=role_permissions)
 
-    permissions = relationship("Permission", secondary=role_permissions, back_populates="roles")
+    def __repr__(self):
+        return f"{self.name}"
 
     @provide_session
     def to_dict(self, session=None):
         return {
             "name": self.name,
-            "description": self.description,
             "permissions": [perm.name for perm in self.permissions],
         }
 
@@ -107,7 +105,8 @@ class Permission(Base):
     name = Column(String(63), unique=True, nullable=False, index=True)
     description = Column(String(255), nullable=True)
 
-    roles = relationship("Role", secondary=role_permissions, back_populates="permissions")
+    def __repr__(self):
+        return f"{self.name}"
 
     @provide_session
     def to_dict(self, session=None):

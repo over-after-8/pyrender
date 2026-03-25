@@ -1,8 +1,8 @@
 """init
 
-Revision ID: 9d2f6ebb40e8
+Revision ID: 366658c196eb
 Revises: 
-Create Date: 2026-03-24 21:30:17.687048
+Create Date: 2026-03-26 00:40:56.463943
 
 """
 from typing import Sequence, Union
@@ -10,9 +10,10 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from render.www.applications.administration.db import administration_db
 
 # revision identifiers, used by Alembic.
-revision: str = '9d2f6ebb40e8'
+revision: str = '366658c196eb'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -31,7 +32,6 @@ def upgrade() -> None:
     op.create_table('roles',
     sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=63), nullable=False),
-    sa.Column('description', sa.String(length=255), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_roles_name'), 'roles', ['name'], unique=True)
@@ -81,6 +81,8 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('user_id', 'module_id')
     )
     # ### end Alembic commands ###
+
+    administration_db.execute()
 
 
 def downgrade() -> None:

@@ -8,11 +8,7 @@ from render.www.app import create_app
 logger = logging.getLogger(__name__)
 
 
-def fullname(klass):
-    module = klass.__module__
-    if module == 'builtins':
-        return klass.__qualname__
-    return module + '.' + klass.__qualname__
+
 
 
 #

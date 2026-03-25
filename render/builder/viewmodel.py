@@ -509,57 +509,67 @@ class ViewModel:
         return render_template(self.detail_template, title=f"Detail {self.model_class.__name__}",
                                model=json.dumps(res.to_dict(), default=str)), 200
 
+
+    @provide_session
+    def edit_item_get(self, item_id, session=None):
+        item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
+        model = self.edit_view_model
+        model.edit_fields = self.edit_fields
+        model.disabled_edit_fields = self.disabled_edit_fields
+        model.item = item
+        model_json = json.dumps(model.to_dict(session), default=str)
+        return render_template(self.edit_template, title=f"Edit {self.model_class.__name__}",
+                               model=model_json), 200
+
+
+    @provide_session
+    def edit_item_post(self, item_id, session=None):
+        item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
+        field_types = self.edit_view_model.field_types
+        for field in self.edit_fields:
+            if field in self.disabled_edit_fields:
+                continue
+            if field_types[field].lower() == "relationship":
+                req_value = request.form.getlist(field)
+                rel_class = relationship_class(self.model_class, field)
+                res = UpdateValue(session.query(rel_class).filter(rel_class.id.in_(req_value)).all())
+            elif field_types[field] == "image_upload":
+                if field in request.files and request.files[field].filename:
+                    upload_file_name = secure_filename(request.files[field].filename)
+                    file = request.files[field]
+                    file.save(os.path.join("/tmp/flask_files", upload_file_name))
+                    res = UpdateValue(upload_file_name)
+                else:
+                    res = NoUpdate()
+
+            else:
+                value = request.form.get(field, None)
+                match field_types[field]:
+                    case "Boolean":
+                        res = UpdateValue(bool(int(request.form.get(field, False))))
+                    case "Date":
+                        res = UpdateValue(datetime.fromtimestamp(int(value) / 1000.0))
+                    case "String":
+                        res = UpdateValue(value)
+                    case "TIMESTAMP":
+                        res = UpdateValue(datetime.fromisoformat(value))
+                    case _:
+                        res = NoUpdate()
+
+            if res.is_updated():
+                setattr(item, field, res.value)
+
+        session.add(item)
+        return redirect(self.list_view_model.search_url_func()), 302
+
     @login_required
     @provide_session
     # @check_permission("edit")
     def edit_item(self, item_id, session=None):
         if request.method == "GET":
-            item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
-            model = self.edit_view_model
-            model.edit_fields = self.edit_fields
-            model.disabled_edit_fields = self.disabled_edit_fields
-            model.item = item
-            model_json = json.dumps(model.to_dict(session), default=str)
-            return render_template(self.edit_template, title=f"Edit {self.model_class.__name__}",
-                                   model=model_json), 200
+            return self.edit_item_get(item_id)
         else:
-            item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
-            field_types = self.edit_view_model.field_types
-            for field in self.edit_fields:
-                if field in self.disabled_edit_fields:
-                    continue
-                if field_types[field].lower() == "relationship":
-                    req_value = request.form.getlist(field)
-                    rel_class = relationship_class(self.model_class, field)
-                    res = UpdateValue(session.query(rel_class).filter(rel_class.id.in_(req_value)).all())
-                elif field_types[field] == "image_upload":
-                    if field in request.files and request.files[field].filename:
-                        upload_file_name = secure_filename(request.files[field].filename)
-                        file = request.files[field]
-                        file.save(os.path.join("/tmp/flask_files", upload_file_name))
-                        res = UpdateValue(upload_file_name)
-                    else:
-                        res = NoUpdate()
-
-                else:
-                    value = request.form.get(field, None)
-                    match field_types[field]:
-                        case "Boolean":
-                            res = UpdateValue(bool(int(request.form.get(field, False))))
-                        case "Date":
-                            res = UpdateValue(datetime.fromtimestamp(int(value) / 1000.0))
-                        case "String":
-                            res = UpdateValue(value)
-                        case "TIMESTAMP":
-                            res = UpdateValue(datetime.fromisoformat(value))
-                        case _:
-                            res = NoUpdate()
-
-                if res.is_updated():
-                    setattr(item, field, res.value)
-
-            session.add(item)
-            return redirect(self.list_view_model.search_url_func()), 302
+            return self.edit_item_post(item_id)
 
     @login_required
     @provide_session
