@@ -12,6 +12,7 @@ class UserService(LoggingMixin):
     def create_user(self, user_name, password, session=None):
         user = User(user_name=user_name, password=self.password_manager.generate_password(password))
         session.add(user)
+        return user
 
     @provide_session
     def verify_password(self, user_name, password, session=None):
