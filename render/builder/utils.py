@@ -1,5 +1,24 @@
+from enum import Enum
+
 from flask import url_for
 from sqlalchemy import inspect
+
+
+class FieldType(Enum):
+    STRING = "string"
+    INTEGER = "integer"
+    FLOAT = "float"
+    BOOLEAN = "boolean"
+    DATE = "date"
+    TIMESTAMP = "timestamp"
+    IMAGE = "image"
+    FILE_UPLOAD = "file_upload"
+    RELATIONSHIP = "relationship"
+    PASSWORD = "password"
+    IMAGE_UPLOAD = "image_upload"
+    RELATIONSHIP_ONE = "relationship_one"
+    RELATIONSHIP_MANY = "relationship_many"
+    SELECT = "select"
 
 
 def outside_url_for(endpoint, **kwargs):
@@ -33,9 +52,20 @@ def get_class(class_name):
 
 
 def is_relationship(model_class, field):
+    from sqlalchemy.orm.base import RelationshipDirection
+
     for rel in inspect(model_class).relationships:
         if rel.key == field:
-            return True
+            match rel.direction:
+                case RelationshipDirection.MANYTOONE:
+                    res = FieldType.RELATIONSHIP_ONE
+                case RelationshipDirection.MANYTOMANY:
+                    res = FieldType.RELATIONSHIP_MANY
+                case RelationshipDirection.ONETOMANY:
+                    res = FieldType.RELATIONSHIP_MANY
+                case _:
+                    res = None
+            return res
     return False
 
 

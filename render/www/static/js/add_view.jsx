@@ -4,51 +4,42 @@ import {CSRFToken} from "./components/utils";
 import Datetime from "react-datetime";
 import "react-datetime/css/react-datetime.css";
 
-import {CButton, CCard, CCardBody, CCol, CContainer, CForm, CFormCheck, CFormInput, CRow,} from "@coreui/react";
+import {CButton, CCard, CCardBody, CCol, CContainer, CForm, CFormInput, CFormLabel, CRow,} from "@coreui/react";
 
 import CIcon from "@coreui/icons-react";
 import {cilPlus, cilX} from "@coreui/icons";
+import Select from "react-select";
+import AddFormHelper from "./components/add_form_helper";
 
 function nowWithoutTime() {
     const date = new Date();
     return date.setHours(0, 0, 0, 0);
 }
 
-function TimestampInput({name}) {
-    const [value, setValue] = useState(nowWithoutTime());
-    return (
-        <div className="mb-3">
-            <label className="form-label">{name}</label>
-            <input type="hidden" name={name} value={value}/>
-            <Datetime dateFormat="YYYY-MM-DD" timeFormat="HH:mm" onChange={setValue}/>
-        </div>
-    );
-}
+// function TimestampInput({name}) {
+//     const [value, setValue] = useState(nowWithoutTime());
+//     return (
+//         <div className="mb-3">
+//             <label className="form-label">{name}</label>
+//             <input type="hidden" name={name} value={value}/>
+//             <Datetime dateFormat="YYYY-MM-DD" timeFormat="HH:mm" onChange={setValue}/>
+//         </div>
+//     );
+// }
 
-const FIELD_COMPONENTS = {
-    Boolean: ({name}) => (
-        <CFormCheck id={`check-${name}`} name={name} label={name} className="mb-3"/>
-    ),
-    TIMESTAMP: ({name}) => <TimestampInput name={name}/>,
-    default: ({name}) => (
-        <CFormInput type="text" id={`input-${name}`} name={name} label={name} className="mb-3"/>
-    ),
-};
 
-function AddFormHelper({name, type}) {
-    const Component = FIELD_COMPONENTS[type] || FIELD_COMPONENTS.default;
-    return <Component name={name}/>;
-}
 
 
 function AddView({model, csrf_token}) {
+    console.log(model)
     return (
         <CCard>
             <CCardBody>
                 <CForm name="addForm" method="post">
                     <CSRFToken csrf_token={csrf_token}/>
-                    {model.fields.map((field) => (
-                        <AddFormHelper key={field.name} name={field.name} type={field.type}/>
+                    {model.add_fields.map((field) => (
+                        <AddFormHelper name={field} data_type={model.data_types[field] || "default"}
+                                       relationships={model.relationships} select_items={model.select_items}/>
                     ))}
 
                     <CButton color="success" type="submit" className="me-2">

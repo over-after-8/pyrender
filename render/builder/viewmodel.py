@@ -3,41 +3,22 @@ import json
 import os
 import uuid
 from datetime import datetime
-from enum import Enum
-from functools import reduce, wraps
+from functools import reduce
 
 from flask import Blueprint, render_template, request, redirect, abort
 from flask_login import login_required, current_user
-from sqlalchemy import and_
 
-from render.builder.utils import outside_url_for, is_relationship, relationship_class
-from render.exceptions.user_exceptions import UserNotFoundError
-from render.models.user import User
+from render.builder.permission_checking import check_permission, Perm
+from render.builder.utils import outside_url_for, is_relationship, relationship_class, FieldType
 from render.utils.config import config
 from render.utils.db import provide_session
-
-
-class FieldType(Enum):
-    STRING = 'string'
-    INTEGER = 'integer'
-    FLOAT = 'float'
-    BOOLEAN = 'boolean'
-    DATE = 'date'
-    TIMESTAMP = 'timestamp'
-    IMAGE = 'image'
-    FILE_UPLOAD = 'file_upload'
-    RELATIONSHIP = 'relationship'
-    PASSWORD = "password"
-    IMAGE_UPLOAD = 'image_upload'
 
 
 def get_auto_field_types(model_class, fields, overwrite_field_types):
     res = {}
     for field in fields:
-        if is_relationship(model_class, field):
-            res[field] = "Relationship"
-        else:
-            res[field] = type(getattr(model_class, field).type).__name__
+        relationship = is_relationship(model_class, field)
+        res[field] = relationship and relationship.value or type(getattr(model_class, field).type).__name__.lower()
     res.update(overwrite_field_types)
     return res
 
@@ -67,21 +48,46 @@ class AddViewModel(SubViewModel):
     add_fields = []
     field_types = {}
     model_class = None
+    select_funcs = {}
 
     def register(self):
         self.model_class = self.view_model_class.model_class
         self.add_fields = self.view_model_class.add_fields
         self.field_types = self.view_model_class.field_types
+        self.select_funcs = self.view_model_class.select_funcs
 
-    def to_dict(self):
-        fields = map(
-            lambda field_name: Field(field_name, type(getattr(self.model_class, field_name).type).__name__).to_dict(),
-            self.add_fields)
-
+    @provide_session
+    def to_dict(self, session=None):
         self.field_types = get_auto_field_types(self.model_class, self.add_fields, self.field_types)
+        relationships = {}
+        select_items = {}
+
+        for field in self.add_fields:
+            relationship = is_relationship(self.model_class, field)
+            match relationship:
+                case FieldType.RELATIONSHIP_ONE:
+                    model_relationship = relationship_class(self.model_class, field)
+                    relationships[field] = relationship_data(model_relationship, session)
+                case FieldType.RELATIONSHIP_MANY:
+                    model_relationship = relationship_class(self.model_class, field)
+                    relationships[field] = relationship_data(model_relationship, session)
+                case _:
+                    pass
+
+            match FieldType(self.field_types[field]):
+                case FieldType.SELECT:
+                    func = self.select_funcs[field]
+                    items = func(session)
+                    select_items[field] = items
+                case _:
+                    pass
+
         return {
-            "fields": list(fields),
-            "field_types": self.field_types
+            "add_fields": self.add_fields,
+            "data_types": self.field_types,
+            "title": f"Add {self.model_class.__name__}",
+            "relationships": relationships,
+            "select_items": select_items
         }
 
 
@@ -154,66 +160,6 @@ class DetailViewModel(SubViewModel):
             "field_types": self.field_types,
             "item": self.map_item()
         }
-
-
-@provide_session
-def permissions_by_user(user_id, session=None):
-    user = session.query(User).filter(User.id == user_id).one_or_none()
-    if user:
-        return reduce(lambda r, x: r + x.permissions, user.roles, [])
-    raise UserNotFoundError("User not found")
-
-
-@provide_session
-def owned_by(model_class, item_id, session=None):
-    res = session.query(model_class).filter(
-        and_(model_class.id == item_id, model_class.created_by == current_user.id)).one_or_none()
-    return bool(res)
-
-
-def check_permission(permission):
-    def check_func(func):
-
-        if "item_id" in func.__code__.co_varnames:
-            @wraps(func)
-            def wrap_func(self_object, item_id, *args, **kwargs):
-                view_model_name = self_object.__class__.__name__
-                required_permission = f"{view_model_name.lower()}.{permission}"
-                permissions = permissions_by_user(current_user.id)
-                all_permission = list(
-                    filter(lambda x: required_permission in x.name and x.name.endswith(".all"), permissions))
-                if all_permission:
-                    return func(self_object, item_id, *args, **kwargs)
-
-                existed_permission = list(filter(lambda x: required_permission in x.name, permissions))
-                if existed_permission:
-                    if owned_by(self_object.model_class, item_id):
-                        return func(self_object, item_id, *args, **kwargs)
-                    else:
-                        return abort(403)
-                return abort(403)
-
-            return wrap_func
-        else:
-            @wraps(func)
-            def wrap(self_object, *args, **kwargs):
-                view_model_name = self_object.__class__.__name__
-                required_permission = f"{view_model_name.lower()}.{permission}"
-                permissions = permissions_by_user(current_user.id)
-
-                all_permission = list(
-                    filter(lambda x: required_permission in x.name and x.name.endswith(".all"), permissions))
-                if all_permission:
-                    return func(self_object, None, *args, **kwargs)
-
-                existed_permission = list(filter(lambda x: required_permission in x.name, permissions))
-                if existed_permission:
-                    return func(self_object, current_user.id, *args, **kwargs)
-                return abort(403)
-
-            return wrap
-
-    return check_func
 
 
 @provide_session
@@ -361,6 +307,7 @@ class ViewModel:
     delete_template = ""
     add_template = ""
     field_types = {}
+    select_funcs = {}
 
     multi_select_actions = {}
 
@@ -438,7 +385,7 @@ class ViewModel:
 
     @login_required
     @provide_session
-    # @check_permission("list")
+    @check_permission(Perm.LIST_ITEM)
     def list_items(self, session=None):
         keyword = request.args.get("keyword", None)
         page = max(int(request.args.get("page", 1)), 1)
@@ -476,14 +423,21 @@ class ViewModel:
             kwargs[field] = request.form.get(field, None)
             if "created_by" in dir(self.model_class):
                 kwargs["created_by"] = current_user.id
-            value = request.form.get(field, None)
+
             field_types = self.add_view_model.field_types
             res = NoUpdate()
-            match field_types[field]:
-                case "Boolean":
-                    res = UpdateValue(bool(int(request.form.get(field, False))))
-                case "TIMESTAMP":
+            match FieldType(field_types[field]):
+                case FieldType.BOOLEAN:
+                    value = request.form.get(field, None)
+                    res = UpdateValue(bool(int(value)))
+                case FieldType.TIMESTAMP:
+                    value = request.form.get(field, None)
                     res = UpdateValue(datetime.fromtimestamp(int(value) / 1000.0))
+                case FieldType.RELATIONSHIP_ONE | FieldType.RELATIONSHIP_MANY:
+                    inp_values = [int(x) for x in filter(lambda x: x, request.form.getlist(field))]
+                    r_cls = relationship_class(self.model_class, field)
+                    values = session.query(r_cls).filter(r_cls.id.in_(inp_values)).all()
+                    res = UpdateValue(values)
                 case _:
                     res = NoUpdate()
             if res.is_updated():
@@ -498,7 +452,7 @@ class ViewModel:
 
     @login_required
     @provide_session
-    # @check_permission("list")
+    @check_permission(Perm.LIST_ITEM)
     def detail_item(self, item_id, session=None):
         item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
         if not item:
@@ -508,7 +462,6 @@ class ViewModel:
 
         return render_template(self.detail_template, title=f"Detail {self.model_class.__name__}",
                                model=json.dumps(res.to_dict(), default=str)), 200
-
 
     @provide_session
     def edit_item_get(self, item_id, session=None):
@@ -521,7 +474,6 @@ class ViewModel:
         return render_template(self.edit_template, title=f"Edit {self.model_class.__name__}",
                                model=model_json), 200
 
-
     @provide_session
     def edit_item_post(self, item_id, session=None):
         item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
@@ -529,32 +481,31 @@ class ViewModel:
         for field in self.edit_fields:
             if field in self.disabled_edit_fields:
                 continue
-            if field_types[field].lower() == "relationship":
-                req_value = request.form.getlist(field)
-                rel_class = relationship_class(self.model_class, field)
-                res = UpdateValue(session.query(rel_class).filter(rel_class.id.in_(req_value)).all())
-            elif field_types[field] == "image_upload":
-                if field in request.files and request.files[field].filename:
-                    upload_file_name = secure_filename(request.files[field].filename)
-                    file = request.files[field]
-                    file.save(os.path.join("/tmp/flask_files", upload_file_name))
-                    res = UpdateValue(upload_file_name)
-                else:
-                    res = NoUpdate()
 
-            else:
-                value = request.form.get(field, None)
-                match field_types[field]:
-                    case "Boolean":
-                        res = UpdateValue(bool(int(request.form.get(field, False))))
-                    case "Date":
-                        res = UpdateValue(datetime.fromtimestamp(int(value) / 1000.0))
-                    case "String":
-                        res = UpdateValue(value)
-                    case "TIMESTAMP":
-                        res = UpdateValue(datetime.fromisoformat(value))
-                    case _:
+            res = NoUpdate()
+            match FieldType(field_types[field].lower()):
+                case FieldType.RELATIONSHIP_ONE | FieldType.RELATIONSHIP_MANY:
+                    req_value = request.form.getlist(field)
+                    rel_class = relationship_class(self.model_class, field)
+                    res = UpdateValue(session.query(rel_class).filter(rel_class.id.in_(req_value)).all())
+                case FieldType.IMAGE_UPLOAD:
+                    if field in request.files and request.files[field].filename:
+                        upload_file_name = secure_filename(request.files[field].filename)
+                        file = request.files[field]
+                        file.save(os.path.join("/tmp/flask_files", upload_file_name))
+                        res = UpdateValue(upload_file_name)
+                    else:
                         res = NoUpdate()
+                case FieldType.BOOLEAN:
+                    res = UpdateValue(bool(int(request.form.get(field, False))))
+                case FieldType.DATE:
+                    res = UpdateValue(datetime.fromtimestamp(int(request.form.get(field, False)) / 1000.0))
+                case FieldType.STRING:
+                    res = UpdateValue(request.form.get(field, False))
+                case FieldType.TIMESTAMP:
+                    res = UpdateValue(datetime.fromisoformat(request.form.get(field, False)))
+                case _:
+                    res = NoUpdate()
 
             if res.is_updated():
                 setattr(item, field, res.value)
@@ -564,7 +515,7 @@ class ViewModel:
 
     @login_required
     @provide_session
-    # @check_permission("edit")
+    @check_permission(Perm.EDIT_ITEM)
     def edit_item(self, item_id, session=None):
         if request.method == "GET":
             return self.edit_item_get(item_id)
@@ -573,7 +524,7 @@ class ViewModel:
 
     @login_required
     @provide_session
-    # @check_permission("delete")
+    @check_permission(Perm.DELETE_ITEM)
     def delete_item(self, item_id, session=None):
         item = session.query(self.model_class).filter(self.model_class.id == item_id).one_or_none()
         if request.method == "GET":
@@ -584,3 +535,21 @@ class ViewModel:
         else:
             session.delete(item)
             return redirect(self.list_view_model.search_url_func()), 302
+
+
+class EmptyViewModel:
+    bp: Blueprint = None
+    template_folder = "templates"
+    static_folder = "static"
+
+    def __init__(self):
+        self.__class__.bp = Blueprint(
+            self.__class__.__name__,
+            self.__class__.__module__,
+            url_prefix=f"{self.__class__.__name__}",
+            template_folder=self.template_folder,
+            static_folder=self.static_folder
+        )
+
+    def register(self, flask_app_or_bp):
+        flask_app_or_bp.register_blueprint(self.bp)

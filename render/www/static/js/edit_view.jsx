@@ -34,7 +34,7 @@ function EditFormHelper({name, type, initValue, relationships}) {
             );
         }
 
-        case "Date": {
+        case "date": {
             const [value, setValue] = useState(dateToISO(initValue));
 
             return (
@@ -55,7 +55,7 @@ function EditFormHelper({name, type, initValue, relationships}) {
             );
         }
 
-        case "Boolean": {
+        case "boolean": {
             const [value, setValue] = useState(Boolean(initValue));
             return (
                 <div className="d-flex align-items-center">
@@ -70,7 +70,7 @@ function EditFormHelper({name, type, initValue, relationships}) {
             );
         }
 
-        case "Relationship": {
+        case "relationship_many": {
             const relOptions = (relationships?.[name] || []).map((item) => ({
                 value: item.id,
                 label: item.name,
@@ -96,6 +96,33 @@ function EditFormHelper({name, type, initValue, relationships}) {
                         isMulti
                         value={selected}
                         onChange={onSelectChangeHandler}
+                    />
+                    {(selected || []).map((s, idx) => (
+                        <input key={`${name}_hidden_${idx}`} type="hidden" name={`${name}[]`} value={s.value}/>
+                    ))}
+                </>
+            );
+        }
+
+        case "relationship_one": {
+            const relOptions = (relationships?.[name] || []).map((item) => ({
+                value: item.id,
+                label: item.name,
+            }));
+
+            const initialSelected = (initValue || {value: -1, label: ""}).map((it) => ({
+                value: it.id,
+                label: it.name,
+            }));
+            const [selected, setSelected] = useState(initialSelected);
+            return (
+                <>
+                    <Select
+                        options={relOptions}
+                        name={name}
+                        closeMenuOnSelect={true}
+                        value={selected}
+                        onChange={setSelected}
                     />
                     {(selected || []).map((s, idx) => (
                         <input key={`${name}_hidden_${idx}`} type="hidden" name={`${name}[]`} value={s.value}/>
@@ -201,7 +228,7 @@ function App({model, title, csrf_token}) {
     const parsed = typeof model === "string" ? JSON.parse(model) : model;
     return (
         <>
-            <CContainer fluid className="p-3">
+            <CContainer fluid={true}>
                 <CRow className="mb-3 align-items-center">
                     <CCol>
                         <h4 className="m-0">{title}</h4>
