@@ -43,14 +43,15 @@ function ActionBox({actions}) {
 
 function ShowViewHelper({value, type}) {
     switch (type) {
-        case "Boolean":
+        case "boolean":
             return (
                 <div>
                     <CFormCheck disabled checked={Boolean(value)}/>
                 </div>
             );
 
-        case "Relationship": {
+        case "relationship_many":
+        case "relationship_one": {
             if (typeof value === "string") {
                 return <span>{value}</span>;
             }
@@ -67,10 +68,6 @@ function ShowViewHelper({value, type}) {
             }
             return <span>-</span>;
         }
-
-        case "JobRunStatus":
-            return <CBadge color="secondary" className="me-2">{value}</CBadge>;
-
         default:
             return <>{value ?? "-"}</>;
     }
@@ -119,7 +116,7 @@ function App({model, title}) {
     return (
         <>
 
-            <CContainer fluid className="p-3">
+            <CContainer fluid={true}>
                 <CRow className="mb-3 align-items-center">
                     <CCol>
                         <h4 className="m-0">{title}</h4>

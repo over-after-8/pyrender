@@ -26,7 +26,7 @@ def login():
         try:
             user = user_service.login(username, password)
             login_user(user)
-            return redirect(url_for(".index"))
+            return redirect(url_for("home.VMHome.index"))
         except (PasswordMismatchError, UserNotFoundError) as e:
             logger.exception(e)
             flash("Invalid username or password")

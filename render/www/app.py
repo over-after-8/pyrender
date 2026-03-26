@@ -8,6 +8,7 @@ from render.models.user import User
 from render.utils.db import provide_session
 from render.www.applications.administration.app import Administration
 from render.www.applications.authentication import auth
+from render.www.applications.home.app import Home
 from render.www.index import Index
 from render.www.utils import path_for
 
@@ -22,6 +23,7 @@ def create_app(app, applications):
     login_manager.login_view = "auth.login"
 
     applications.append(Administration("Administration"))
+    applications.append(Home("Home"))
 
     app.secret_key = "your-secret-key"
     CSRFProtect(app)
@@ -30,9 +32,6 @@ def create_app(app, applications):
     @provide_session
     def load_user(user_id, session=None):
         user = session.query(User).filter(User.id == user_id).one_or_none()
-        # roles = user.roles
-        # permissions = reduce(lambda r, x: r + x.permissions, roles, [])
-        # modules = user.modules
         return user
 
     @app.context_processor

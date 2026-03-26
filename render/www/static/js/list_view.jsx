@@ -24,7 +24,7 @@ import {cilPencil, cilSearch, cilTrash} from "@coreui/icons";
 
 function ListViewHelper({value, type, row_id}) {
     switch (type) {
-        case "Boolean":
+        case "boolean":
             return (
                 <CFormCheck
                     disabled
@@ -33,7 +33,8 @@ function ListViewHelper({value, type, row_id}) {
                 />
             );
 
-        case "Relationship":
+        case "relationship_many":
+        case "relationship_one":
             if (typeof value === "string") {
                 return (
                     <CBadge color="secondary" className="me-1">
